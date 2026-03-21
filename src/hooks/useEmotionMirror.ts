@@ -39,24 +39,30 @@ function classifyEmotion(
 
   const smileScore = (get('mouthSmileLeft') + get('mouthSmileRight')) / 2;
 
-  // Sadness reads as inner-brow raise (browInnerUp) + mouth corners pulling down.
-  // Averaging both signals means BOTH need to be elevated — prevents a naturally
-  // raised brow at rest (common in neutral faces) from triggering sad alone.
+  // Sadness: two paths —
+  //   1. Classic frown: mouth corners down + inner brow raise
+  //   2. Pout: mouth corners down + lips pushed out (mouthPucker)
+  // Taking the max means either expression triggers sad.
   const mouthFrown  = (get('mouthFrownLeft') + get('mouthFrownRight')) / 2;
   const browInnerUp = get('browInnerUp');
-  const frownScore  = (mouthFrown + browInnerUp) / 2;
+  const mouthPucker = get('mouthPucker');
+  const frownScore  = Math.max(
+    (mouthFrown + browInnerUp) / 2,                          // classic sad frown
+    mouthFrown > 0.12 ? (mouthFrown + mouthPucker) / 2 : 0, // pout — only if corners also droop
+    mouthFrown                                               // strong corner droop alone
+  );
 
   if (smileScore > 0.25 && smileScore > frownScore) {
     return { emotion: 'happy', confidence: smileScore };
   }
-  if (frownScore > 0.2 && frownScore >= smileScore) {
+  if (frownScore > 0.25 && frownScore >= smileScore) {
     return { emotion: 'sad', confidence: frownScore };
   }
   return { emotion: 'neutral', confidence: 1 - Math.max(smileScore, frownScore) };
 }
 
-/** 5-frame rolling buffer to smooth per-face emotion */
-function createSmoothingBuffer(size = 5) {
+/** 10-frame rolling buffer to smooth per-face emotion */
+function createSmoothingBuffer(size = 10) {
   const buffers: EmotionLabel[][] = [[], []];
   return {
     push(faceIndex: number, emotion: EmotionLabel) {
@@ -88,7 +94,7 @@ export function useEmotionMirror({ active }: UseEmotionMirrorOptions) {
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number>(0);
   const lastFrameRef = useRef<number>(0);
-  const smoothing = useRef(createSmoothingBuffer(5));
+  const smoothing = useRef(createSmoothingBuffer(10));
 
   const [isLoading, setIsLoading] = useState(false);
   const [cameraPermission, setCameraPermission] = useState<CameraPermission>('prompt');
