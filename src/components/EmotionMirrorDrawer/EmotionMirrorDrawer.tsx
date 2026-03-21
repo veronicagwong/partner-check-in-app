@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useEmotionMirror } from '../../hooks/useEmotionMirror';
 import type { FaceEmotion } from '../../types/emotion';
 
@@ -15,7 +15,7 @@ function resolveBackground(faces: FaceEmotion[]): string {
   if (n === 1) {
     if (faces[0].emotion === 'happy') return '#FFF6B1';
     if (faces[0].emotion === 'sad')   return '#C1EDFF';
-    return '#FFFFFF';
+    return '#EFEFED';
   }
   const [a, b] = faces;
   if (a.emotion === 'happy' && b.emotion === 'happy') return '#FFD600';
@@ -24,14 +24,30 @@ function resolveBackground(faces: FaceEmotion[]): string {
     (a.emotion === 'happy' && b.emotion === 'sad') ||
     (a.emotion === 'sad'   && b.emotion === 'happy')
   ) return '#9E9E9E';
-  return '#FFFFFF';
+  return '#EFEFED';
 }
 
-function circleColor(emotion: FaceEmotion['emotion']): string {
-  if (emotion === 'happy') return 'rgba(255,255,255,0.92)';
-  if (emotion === 'sad')   return 'rgba(255,255,255,0.45)';
-  return 'rgba(255,255,255,0.68)';
-}
+// Simple flex wrapper (glow is on the blob itself via box-shadow)
+const glowWrapStyle: React.CSSProperties = {
+  position: 'relative',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+};
+
+// Apple liquid-glass style + glow via box-shadow
+const glassStyle: React.CSSProperties = {
+  background: 'linear-gradient(145deg, rgba(255,255,255,0.60) 0%, rgba(255,255,255,0.20) 100%)',
+  border: '1px solid rgba(255,255,255,0.75)',
+  boxShadow: [
+    '0 0 60px 28px rgba(255,255,255,0.70)',   // tight inner glow — centered
+    '0 0 140px 70px rgba(255,255,255,0.35)',  // wide soft halo — centered
+    'inset 0 1.5px 0 rgba(255,255,255,0.95)',
+    'inset 0 -1px 0 rgba(255,255,255,0.20)',
+  ].join(', '),
+  backdropFilter: 'blur(18px) saturate(1.5)',
+  WebkitBackdropFilter: 'blur(18px) saturate(1.5)',
+};
 
 // ── Focus trap ────────────────────────────────────────────────────────────────
 
@@ -273,28 +289,20 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
         }}
       >
         {isLoading ? (
-          <div
-            className="pulse-circle"
-            style={{
-              width: circleSize,
-              height: circleSize,
-              borderRadius: '50%',
-              background: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)',
-            }}
-          />
-        ) : faces.length === 0 ? null : (
-          faces.map((face, i) => (
+          <div style={glowWrapStyle}>
             <div
-              key={i}
-              style={{
-                width: circleSize,
-                height: circleSize,
-                borderRadius: '50%',
-                background: circleColor(face.emotion),
-                transition: 'background 1.2s ease',
-                boxShadow: '0 12px 60px rgba(0,0,0,0.18)',
-              }}
+              className="blob-a pulse-circle"
+              style={{ width: circleSize, height: circleSize, ...glassStyle }}
             />
+          </div>
+        ) : faces.length === 0 ? null : (
+          faces.map((_face, i) => (
+            <div key={i} style={glowWrapStyle}>
+              <div
+                className={i === 0 ? 'blob-a' : 'blob-b'}
+                style={{ width: circleSize, height: circleSize, ...glassStyle }}
+              />
+            </div>
           ))
         )}
       </div>

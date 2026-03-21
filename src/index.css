@@ -48,3 +48,45 @@ body {
 body.drawer-open {
   overflow: hidden;
 }
+
+/* ── Living blob animations ───────────────────────────────────────────────── */
+
+@keyframes blob-morph-a {
+  0%,100% { border-radius: 55% 45% 48% 52% / 52% 48% 55% 45%; }
+  25%     { border-radius: 48% 52% 55% 45% / 45% 55% 48% 52%; }
+  50%     { border-radius: 52% 48% 45% 55% / 55% 45% 52% 48%; }
+  75%     { border-radius: 45% 55% 52% 48% / 48% 52% 45% 55%; }
+}
+
+@keyframes blob-morph-b {
+  0%,100% { border-radius: 48% 52% 55% 45% / 55% 45% 48% 52%; }
+  25%     { border-radius: 55% 45% 48% 52% / 48% 52% 55% 45%; }
+  50%     { border-radius: 45% 55% 52% 48% / 52% 48% 45% 55%; }
+  75%     { border-radius: 52% 48% 45% 55% / 45% 55% 52% 48%; }
+}
+
+@keyframes blob-drift-a {
+  0%,100% { transform: translate(  0px,   0px) scale(1.00); }
+  25%     { transform: translate(  8px, -12px) scale(1.02); }
+  50%     { transform: translate( -6px,   8px) scale(0.98); }
+  75%     { transform: translate( -9px,  -4px) scale(1.01); }
+}
+
+@keyframes blob-drift-b {
+  0%,100% { transform: translate(  0px,   0px) scale(1.00); }
+  25%     { transform: translate(-11px,   7px) scale(0.98); }
+  50%     { transform: translate(  7px,  -9px) scale(1.02); }
+  75%     { transform: translate(  9px,   5px) scale(0.99); }
+}
+
+.blob-a {
+  animation:
+    blob-morph-a 8s  ease-in-out infinite,
+    blob-drift-a 7s  ease-in-out infinite;
+}
+
+.blob-b {
+  animation:
+    blob-morph-b 9s  ease-in-out infinite,
+    blob-drift-b 8.5s ease-in-out infinite;
+}
