@@ -35,18 +35,35 @@ const glowWrapStyle: React.CSSProperties = {
   justifyContent: 'center',
 };
 
-// Apple liquid-glass style + glow via box-shadow
+// Apple liquid-glass with depth — light source from above
 const glassStyle: React.CSSProperties = {
-  background: 'linear-gradient(145deg, rgba(255,255,255,0.60) 0%, rgba(255,255,255,0.20) 100%)',
-  border: '1px solid rgba(255,255,255,0.75)',
+  // Gradient fades from bright white at top → warm translucent at bottom
+  background: [
+    'linear-gradient(180deg,',
+    '  rgba(255,255,255,0.92) 0%,',
+    '  rgba(255,255,255,0.58) 22%,',
+    '  rgba(245,240,235,0.32) 70%,',
+    '  rgba(228,220,212,0.22) 100%)',
+  ].join(''),
+  // Top edge brighter, bottom edge dimmer
+  border: '1px solid rgba(255,255,255,0.70)',
   boxShadow: [
-    '0 0 60px 28px rgba(255,255,255,0.70)',   // tight inner glow — centered
-    '0 0 140px 70px rgba(255,255,255,0.35)',  // wide soft halo — centered
-    'inset 0 1.5px 0 rgba(255,255,255,0.95)',
-    'inset 0 -1px 0 rgba(255,255,255,0.20)',
+    // ── Outer glow (centered, no direction) ──
+    '0 0 55px 24px rgba(255,255,255,0.65)',
+    '0 0 130px 65px rgba(255,255,255,0.28)',
+    // ── Subtle ground shadow ──
+    '0 8px 28px rgba(0,0,0,0.07)',
+    // ── Top rim — sharp light catch from above ──
+    'inset 0 3px 0px rgba(255,255,255,1.00)',
+    'inset 0 10px 20px rgba(255,255,255,0.52)',
+    // ── Bottom inner shadow — thickness / concavity ──
+    'inset 0 -5px 14px rgba(0,0,0,0.11)',
+    'inset 0 -1px 0px rgba(0,0,0,0.09)',
+    // ── Left edge highlight (secondary catch light) ──
+    'inset 3px 0 10px rgba(255,255,255,0.28)',
   ].join(', '),
-  backdropFilter: 'blur(18px) saturate(1.5)',
-  WebkitBackdropFilter: 'blur(18px) saturate(1.5)',
+  backdropFilter: 'blur(20px) saturate(1.6)',
+  WebkitBackdropFilter: 'blur(20px) saturate(1.6)',
 };
 
 // ── Focus trap ────────────────────────────────────────────────────────────────
