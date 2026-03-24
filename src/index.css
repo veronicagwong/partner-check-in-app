@@ -90,3 +90,17 @@ body.drawer-open {
     blob-morph-b 9s  ease-in-out infinite,
     blob-drift-b 8.5s ease-in-out infinite;
 }
+
+/* ── Grass blade animations ───────────────────────────────────────────────── */
+
+@keyframes blade-grow {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+
+/* Uses --sway-amp CSS custom property set inline per blade */
+@keyframes blade-sway {
+  0%, 100% { transform: rotate(0deg); }
+  25%       { transform: rotate(calc(var(--sway-amp) * -1)); }
+  75%       { transform: rotate(var(--sway-amp)); }
+}

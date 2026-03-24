@@ -37,22 +37,30 @@ function classifyEmotion(
   const get = (name: string) =>
     blendshapes.find((b) => b.categoryName === name)?.score ?? 0;
 
+  // ── Happy ──────────────────────────────────────────────────────────────────
   const smileScore = (get('mouthSmileLeft') + get('mouthSmileRight')) / 2;
 
-  // Sadness: two paths —
-  //   1. Classic frown: mouth corners down + inner brow raise
-  //   2. Pout: mouth corners down + lips pushed out (mouthPucker)
-  // Taking the max means either expression triggers sad.
+  // ── Sad ────────────────────────────────────────────────────────────────────
+  // Two paths to sad, both require deliberate effort:
+  //
+  //  A) Pout-frown: corners down + lips pushed out (mouthPucker).
+  //     The pucker gate stops people with a naturally downturned mouth.
+  //
+  //  B) Extreme frown alone: corners pulled SO far down that no pucker is
+  //     needed. The 0.45 gate is well above any natural resting position,
+  //     so only an intentional exaggerated frown clears it.
   const mouthFrown  = (get('mouthFrownLeft') + get('mouthFrownRight')) / 2;
-  const browInnerUp = get('browInnerUp');
   const mouthPucker = get('mouthPucker');
-  const frownScore  = Math.max(
-    (mouthFrown + browInnerUp) / 2,                          // classic sad frown
-    mouthFrown > 0.12 ? (mouthFrown + mouthPucker) / 2 : 0, // pout — only if corners also droop
-    mouthFrown                                               // strong corner droop alone
+
+  const frownScore = Math.max(
+    // Path A — pout combo
+    (mouthFrown > 0.15 && mouthPucker > 0.08) ? (mouthFrown + mouthPucker) / 2 : 0,
+    // Path B — extreme frown, no pucker required
+    mouthFrown > 0.45 ? mouthFrown : 0,
   );
 
-  if (smileScore > 0.25 && smileScore > frownScore) {
+  // ── Classify ───────────────────────────────────────────────────────────────
+  if (smileScore > 0.28 && smileScore > frownScore) {
     return { emotion: 'happy', confidence: smileScore };
   }
   if (frownScore > 0.25 && frownScore >= smileScore) {
@@ -87,19 +95,21 @@ function createSmoothingBuffer(size = 10) {
 
 interface UseEmotionMirrorOptions {
   active: boolean;
+  deviceId?: string;
 }
 
-export function useEmotionMirror({ active }: UseEmotionMirrorOptions) {
+export function useEmotionMirror({ active, deviceId }: UseEmotionMirrorOptions) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number>(0);
   const lastFrameRef = useRef<number>(0);
-  const smoothing = useRef(createSmoothingBuffer(10));
+  const smoothing = useRef(createSmoothingBuffer(8));
 
   const [isLoading, setIsLoading] = useState(false);
   const [cameraPermission, setCameraPermission] = useState<CameraPermission>('prompt');
   const [faces, setFaces] = useState<FaceEmotion[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [cameras, setCameras] = useState<MediaDeviceInfo[]>([]);
 
   const stopAll = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
@@ -165,15 +175,22 @@ export function useEmotionMirror({ active }: UseEmotionMirrorOptions) {
 
     async function start() {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user' },
-        });
+        const videoConstraint: MediaTrackConstraints = deviceId
+          ? { deviceId: { exact: deviceId } }
+          : { facingMode: 'user' };
+        const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraint });
         if (cancelled) {
           stream.getTracks().forEach((t) => t.stop());
           return;
         }
         streamRef.current = stream;
         setCameraPermission('granted');
+
+        // Enumerate cameras after permission is granted (labels are available now)
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        if (!cancelled) {
+          setCameras(devices.filter((d) => d.kind === 'videoinput'));
+        }
 
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -205,13 +222,14 @@ export function useEmotionMirror({ active }: UseEmotionMirrorOptions) {
       cancelled = true;
       stopAll();
     };
-  }, [active, stopAll, processFrame]);
+  }, [active, deviceId, stopAll, processFrame]);
 
   return {
     videoRef: videoRef as RefObject<HTMLVideoElement | null>,
     isLoading,
     cameraPermission,
     faces,
+    cameras,
     error,
   };
 }
