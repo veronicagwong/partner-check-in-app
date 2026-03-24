@@ -3,6 +3,8 @@ export type EmotionLabel = 'happy' | 'sad' | 'neutral';
 export interface FaceEmotion {
   emotion: EmotionLabel;
   confidence: number;
+  /** Raw blendshape scores — present only when DEBUG_EMOTION is true */
+  debug?: { smile: number; frown: number; pucker: number; frownScore: number };
 }
 
 export type CameraPermission = 'prompt' | 'granted' | 'denied' | 'loading';

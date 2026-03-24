@@ -9,6 +9,29 @@ interface Props {
 }
 
 // ── Color field logic ─────────────────────────────────────────────────────────
+//
+//  Faces    │ Emotions            │ Background
+//  ─────────┼─────────────────────┼───────────
+//  0        │ —                   │ #ECECEA  (idle grey)
+//  1        │ happy               │ #FFF6B1  (soft yellow)
+//  1        │ sad                 │ #C1EDFF  (light blue)
+//  1        │ neutral             │ #EFEFED  (neutral grey)
+//  2        │ happy + happy       │ #FFD600  (bright yellow)
+//  2        │ sad   + sad         │ #0D2B6B  (deep blue)
+//  2        │ happy + sad         │ #9E9E9E  (grey)
+//  2        │ sad   + neutral     │ #C1EDFF  (light blue)
+//  2        │ happy + neutral     │ #FFF6B1  (soft yellow)
+//  2        │ neutral + neutral   │ #EFEFED  (neutral grey)
+//
+// ── Emotion thresholds ────────────────────────────────────────────────────────
+//
+//  Emotion  │ Signal                                     │ Threshold
+//  ─────────┼────────────────────────────────────────────┼──────────
+//  happy    │ (mouthSmileLeft + mouthSmileRight) / 2     │ > 0.28
+//  sad A    │ (mouthFrown + mouthPucker) / 2             │ > 0.25
+//           │   gates: mouthFrown > 0.15, mouthPucker > 0.08
+//  sad B    │ mouthFrown alone (extreme frown, no pucker)│ > 0.38
+//  neutral  │ neither happy nor sad threshold met        │ —
 
 function resolveBackground(faces: FaceEmotion[]): string {
   const n = faces.length;
@@ -19,12 +42,13 @@ function resolveBackground(faces: FaceEmotion[]): string {
     return '#EFEFED';
   }
   const [a, b] = faces;
-  if (a.emotion === 'happy' && b.emotion === 'happy') return '#FFD600';
-  if (a.emotion === 'sad'   && b.emotion === 'sad')   return '#0D2B6B';
-  if (
-    (a.emotion === 'happy' && b.emotion === 'sad') ||
-    (a.emotion === 'sad'   && b.emotion === 'happy')
-  ) return '#9E9E9E';
+  const emotions = [a.emotion, b.emotion].sort(); // sort for easy comparison
+
+  if (emotions[0] === 'happy' && emotions[1] === 'happy') return '#FFD600';
+  if (emotions[0] === 'sad'   && emotions[1] === 'sad')   return '#0D2B6B';
+  if (emotions.includes('happy') && emotions.includes('sad'))  return '#9E9E9E';
+  if (emotions.includes('sad'))   return '#C1EDFF'; // one sad, one neutral → blue
+  if (emotions.includes('happy')) return '#FFF6B1'; // one happy, one neutral → yellow
   return '#EFEFED';
 }
 
@@ -395,6 +419,32 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
         >
           📷
         </button>
+      )}
+
+      {/* ── Debug overlay — remove once thresholds are tuned ── */}
+      {faces.some(f => f.debug) && (
+        <div style={{
+          position: 'absolute',
+          top: 64,
+          left: 12,
+          fontFamily: 'monospace',
+          fontSize: 11,
+          color: isDark ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.55)',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 4,
+          pointerEvents: 'none',
+          zIndex: 3,
+        }}>
+          {faces.map((f, i) => f.debug && (
+            <div key={i} style={{ lineHeight: 1.7 }}>
+              <b>face {i}</b> → <b>{f.emotion}</b><br />
+              😊 smile {f.debug.smile.toFixed(2)} <span style={{ opacity: 0.5 }}>(need &gt;0.28)</span><br />
+              😢 frown {f.debug.frown.toFixed(2)} · pucker {f.debug.pucker.toFixed(2)} · score {f.debug.frownScore.toFixed(2)} <span style={{ opacity: 0.5 }}>(need &gt;0.25)</span><br />
+              😐 neutral = neither threshold met
+            </div>
+          ))}
+        </div>
       )}
 
       {/* ── Grass layer — grows up from the bottom ── */}

@@ -30,6 +30,9 @@ async function getOrCreateFaceLandmarker() {
   return initPromise;
 }
 
+// Set to true temporarily to show a live score overlay in the drawer
+const DEBUG_EMOTION = true;
+
 /** Extract dominant emotion from a set of MediaPipe blendshapes */
 function classifyEmotion(
   blendshapes: Array<{ categoryName: string; score: number }>
@@ -56,17 +59,19 @@ function classifyEmotion(
     // Path A — pout combo
     (mouthFrown > 0.15 && mouthPucker > 0.08) ? (mouthFrown + mouthPucker) / 2 : 0,
     // Path B — extreme frown, no pucker required
-    mouthFrown > 0.45 ? mouthFrown : 0,
+    mouthFrown > 0.38 ? mouthFrown : 0,
   );
 
   // ── Classify ───────────────────────────────────────────────────────────────
+  const debug = DEBUG_EMOTION ? { smile: smileScore, frown: mouthFrown, pucker: mouthPucker, frownScore } : undefined;
+
   if (smileScore > 0.28 && smileScore > frownScore) {
-    return { emotion: 'happy', confidence: smileScore };
+    return { emotion: 'happy', confidence: smileScore, debug };
   }
   if (frownScore > 0.25 && frownScore >= smileScore) {
-    return { emotion: 'sad', confidence: frownScore };
+    return { emotion: 'sad', confidence: frownScore, debug };
   }
-  return { emotion: 'neutral', confidence: 1 - Math.max(smileScore, frownScore) };
+  return { emotion: 'neutral', confidence: 1 - Math.max(smileScore, frownScore), debug };
 }
 
 /** 10-frame rolling buffer to smooth per-face emotion */
@@ -103,7 +108,8 @@ export function useEmotionMirror({ active, deviceId }: UseEmotionMirrorOptions) 
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number>(0);
   const lastFrameRef = useRef<number>(0);
-  const smoothing = useRef(createSmoothingBuffer(8));
+  const smoothing      = useRef(createSmoothingBuffer(8));
+  const prevFaceCount  = useRef(0);
 
   const [isLoading, setIsLoading] = useState(false);
   const [cameraPermission, setCameraPermission] = useState<CameraPermission>('prompt');
@@ -145,11 +151,21 @@ export function useEmotionMirror({ active, deviceId }: UseEmotionMirrorOptions) 
         const detected: FaceEmotion[] = [];
 
         if (result.faceBlendshapes) {
+          const count = result.faceBlendshapes.length;
+
+          // When the number of faces changes, face indices may refer to
+          // different people than before — reset history so stale readings
+          // from another person don't bleed into the new assignment.
+          if (count !== prevFaceCount.current) {
+            smoothing.current.reset();
+            prevFaceCount.current = count;
+          }
+
           result.faceBlendshapes.forEach((blendshapeSet, i) => {
             const raw = classifyEmotion(blendshapeSet.categories);
             smoothing.current.push(i, raw.emotion);
             const smoothed = smoothing.current.get(i);
-            detected.push({ emotion: smoothed, confidence: raw.confidence });
+            detected.push({ emotion: smoothed, confidence: raw.confidence, debug: raw.debug });
           });
         }
 
