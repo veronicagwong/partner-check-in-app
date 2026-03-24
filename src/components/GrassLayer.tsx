@@ -1,48 +1,59 @@
 import React from 'react';
 
-// ── Blade definitions ─────────────────────────────────────────────────────────
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const BACK_COLOR  = '#A6B886';  // lighter, muted sage — recedes into background
+const FRONT_COLOR = '#5E7848';  // darker, richer green — pops into foreground
+const GROW_DUR    = 0.65;
+const STAGGER     = 0.08;
+
+// ── Blade config ──────────────────────────────────────────────────────────────
 
 interface BladeConfig {
-  xPct:       number;  // horizontal position 0–100%
-  h:          number;  // height in px
-  w:          number;  // base width in px
-  lean:       number;  // tip lean: negative = left, positive = right
-  swayDur:    number;  // sway period in seconds
-  swayAmp:    number;  // sway amplitude in degrees
-  swayPhase:  number;  // delay offset so blades don't sway in sync
+  xPct:      number;   // horizontal position 0–100% of screen
+  h:         number;   // height px
+  w:         number;   // base width px
+  lean:      number;   // tip lean (negative = left, positive = right)
+  swayDur:   number;   // sway period s
+  swayAmp:   number;   // sway amplitude deg
+  swayPhase: number;   // phase offset s so blades don't move in sync
 }
 
-const BLADES: BladeConfig[] = [
-  { xPct:  3,  h: 68, w:  9, lean: -0.30, swayDur: 3.2, swayAmp: 4, swayPhase: 0.00 },
-  { xPct: 12,  h: 82, w: 10, lean:  0.20, swayDur: 2.8, swayAmp: 3, swayPhase: 0.50 },
-  { xPct: 23,  h: 50, w:  7, lean: -0.15, swayDur: 3.5, swayAmp: 5, swayPhase: 1.10 },
-  { xPct: 36,  h: 88, w: 11, lean:  0.40, swayDur: 2.6, swayAmp: 3, swayPhase: 0.30 },
-  { xPct: 50,  h: 60, w:  8, lean: -0.25, swayDur: 3.8, swayAmp: 4, swayPhase: 0.80 },
-  { xPct: 63,  h: 75, w: 10, lean:  0.30, swayDur: 2.9, swayAmp: 3, swayPhase: 0.15 },
-  { xPct: 77,  h: 45, w:  6, lean: -0.10, swayDur: 3.3, swayAmp: 5, swayPhase: 0.90 },
-  { xPct: 88,  h: 85, w: 11, lean:  0.35, swayDur: 2.7, swayAmp: 4, swayPhase: 0.60 },
-  { xPct: 96,  h: 55, w:  8, lean: -0.20, swayDur: 3.6, swayAmp: 3, swayPhase: 0.25 },
+// Back layer — bell curve heights: tallest at center, shortest at edges
+const BACK_BLADES: BladeConfig[] = [
+  { xPct: 15,  h: 26, w: 5, lean: -0.20, swayDur: 3.2, swayAmp: 3, swayPhase: 0.00 },
+  { xPct: 22,  h: 33, w: 6, lean:  0.15, swayDur: 2.9, swayAmp: 4, swayPhase: 0.50 },
+  { xPct: 31,  h: 40, w: 6, lean: -0.10, swayDur: 3.5, swayAmp: 3, swayPhase: 1.00 },
+  { xPct: 40,  h: 46, w: 7, lean:  0.25, swayDur: 2.7, swayAmp: 4, swayPhase: 0.30 },
+  { xPct: 50,  h: 50, w: 7, lean: -0.15, swayDur: 3.8, swayAmp: 3, swayPhase: 0.70 },
+  { xPct: 60,  h: 45, w: 7, lean:  0.10, swayDur: 3.0, swayAmp: 4, swayPhase: 0.20 },
+  { xPct: 69,  h: 38, w: 6, lean: -0.20, swayDur: 3.3, swayAmp: 3, swayPhase: 0.90 },
+  { xPct: 78,  h: 30, w: 5, lean:  0.30, swayDur: 2.8, swayAmp: 4, swayPhase: 0.40 },
+  { xPct: 85,  h: 24, w: 5, lean: -0.12, swayDur: 3.6, swayAmp: 3, swayPhase: 0.60 },
 ];
 
-const BLADE_COLOR  = '#7D9164';   // soft sage/olive
-const GROW_DUR     = 0.65;        // seconds for the spring-grow animation
-const STAGGER      = 0.08;        // seconds between each blade's grow start
+// Front layer — bell curve heights: tallest at center, shortest at edges
+const FRONT_BLADES: BladeConfig[] = [
+  { xPct: 18,  h: 52, w:  8, lean: -0.30, swayDur: 3.2, swayAmp: 4, swayPhase: 0.10 },
+  { xPct: 27,  h: 72, w: 10, lean:  0.20, swayDur: 2.8, swayAmp: 3, swayPhase: 0.60 },
+  { xPct: 37,  h: 90, w: 11, lean: -0.15, swayDur: 3.0, swayAmp: 3, swayPhase: 1.20 },
+  { xPct: 47,  h: 100,w: 12, lean:  0.10, swayDur: 2.6, swayAmp: 3, swayPhase: 0.40 },
+  { xPct: 57,  h: 96, w: 12, lean:  0.20, swayDur: 3.4, swayAmp: 4, swayPhase: 0.90 },
+  { xPct: 67,  h: 80, w: 10, lean:  0.35, swayDur: 2.9, swayAmp: 3, swayPhase: 0.20 },
+  { xPct: 76,  h: 60, w:  9, lean: -0.25, swayDur: 3.5, swayAmp: 5, swayPhase: 0.70 },
+  { xPct: 84,  h: 44, w:  7, lean:  0.15, swayDur: 3.1, swayAmp: 4, swayPhase: 0.30 },
+];
 
 // ── SVG path helper ───────────────────────────────────────────────────────────
-// Blade base is always centred in the SVG so transformOrigin:'bottom center'
-// pivots exactly from the blade root.
 
 function getBladeSVG(h: number, w: number, lean: number) {
   const tipOffsetX = lean * h * 0.35;
   const halfBase   = w / 2;
   const pad        = 6;
-  // Expand half-width enough to contain the leaning tip
   const halfSVG    = Math.max(halfBase + Math.abs(tipOffsetX), halfBase) + pad;
   const svgW       = halfSVG * 2;
-
-  // In SVG coords: base centre at (halfSVG, h)
-  const cx   = halfSVG;
-  const tipX = cx + tipOffsetX;
+  const cx         = halfSVG;
+  const tipX       = cx + tipOffsetX;
 
   const f = (n: number) => n.toFixed(1);
   const path = [
@@ -59,69 +70,86 @@ function getBladeSVG(h: number, w: number, lean: number) {
   return { path, svgW, halfSVG, viewBox: `0 0 ${f(svgW)} ${h}` };
 }
 
+// ── Blade renderer ────────────────────────────────────────────────────────────
+
+function Blade({
+  xPct, h, w, lean, swayDur, swayAmp, swayPhase, growDelay, color,
+}: BladeConfig & { growDelay: number; color: string }) {
+  const { path, svgW, halfSVG, viewBox } = getBladeSVG(h, w, lean);
+  const swayDelay = growDelay + GROW_DUR + 0.1;
+
+  return (
+    <div style={{
+      position: 'absolute',
+      bottom: 0,
+      left: `calc(${xPct}% - ${halfSVG.toFixed(1)}px)`,
+    }}>
+      <div style={{
+        transformOrigin: 'bottom center',
+        animation: `blade-grow ${GROW_DUR}s cubic-bezier(0.34, 1.56, 0.64, 1) ${growDelay}s both`,
+      }}>
+        <div style={{
+          transformOrigin: 'bottom center',
+          '--sway-amp': `${swayAmp}deg`,
+          animation: `blade-sway ${swayDur}s ease-in-out ${swayDelay + swayPhase}s infinite`,
+        } as React.CSSProperties}>
+          <svg width={svgW} height={h} viewBox={viewBox} fill="none" style={{ display: 'block' }}>
+            <path d={path} fill={color} />
+          </svg>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Component ─────────────────────────────────────────────────────────────────
-// Hardcoded to 'happy' for now — emotion wiring comes next.
+// Two layers at the screen bottom — back grows first, front grows 0.3s later.
+// The blob floats above independently; the grass is a ground plane only.
 
 export function GrassLayer() {
   return (
-    <div
-      style={{
+    <>
+      {/* Back layer — short, muted, full width */}
+      <div style={{
         position: 'absolute',
-        bottom: 0,
+        bottom: '28%',
         left: 0,
         right: 0,
-        height: 0,          // zero height; blades overflow upward
+        height: 0,
         overflow: 'visible',
         pointerEvents: 'none',
         zIndex: 1,
-      }}
-    >
-      {BLADES.map((blade, i) => {
-        const { path, svgW, halfSVG, viewBox } = getBladeSVG(blade.h, blade.w, blade.lean);
-        const growDelay = i * STAGGER;
-        const swayDelay = growDelay + GROW_DUR + 0.1; // start sway after grow settles
-
-        return (
-          <div
+      }}>
+        {BACK_BLADES.map((blade, i) => (
+          <Blade
             key={i}
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              // Centre the SVG (and thus the blade base) at xPct
-              left: `calc(${blade.xPct}% - ${halfSVG.toFixed(1)}px)`,
-            }}
-          >
-            {/* ── Grow layer — scaleY spring from bottom ── */}
-            <div
-              style={{
-                transformOrigin: 'bottom center',
-                animation: `blade-grow ${GROW_DUR}s cubic-bezier(0.34, 1.56, 0.64, 1) ${growDelay}s both`,
-              }}
-            >
-              {/* ── Sway layer — gentle looping rotation ── */}
-              <div
-                style={{
-                  transformOrigin: 'bottom center',
-                  // CSS custom property consumed by the @keyframes
-                  '--sway-amp': `${blade.swayAmp}deg`,
-                  animation: `blade-sway ${blade.swayDur}s ease-in-out ${swayDelay + blade.swayPhase}s infinite`,
-                } as React.CSSProperties}
-              >
-                <svg
-                  width={svgW}
-                  height={blade.h}
-                  viewBox={viewBox}
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  style={{ display: 'block' }}
-                >
-                  <path d={path} fill={BLADE_COLOR} />
-                </svg>
-              </div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
+            {...blade}
+            color={BACK_COLOR}
+            growDelay={i * STAGGER}
+          />
+        ))}
+      </div>
+
+      {/* Front layer — tall, rich, centered more toward middle */}
+      <div style={{
+        position: 'absolute',
+        bottom: '28%',
+        left: 0,
+        right: 0,
+        height: 0,
+        overflow: 'visible',
+        pointerEvents: 'none',
+        zIndex: 2,
+      }}>
+        {FRONT_BLADES.map((blade, i) => (
+          <Blade
+            key={i}
+            {...blade}
+            color={FRONT_COLOR}
+            growDelay={0.3 + i * STAGGER}
+          />
+        ))}
+      </div>
+    </>
   );
 }

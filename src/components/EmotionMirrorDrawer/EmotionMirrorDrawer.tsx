@@ -357,11 +357,11 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
         )}
       </div>
 
-      {/* ── Emotion circles — screen center ── */}
+      {/* ── Emotion circles — upper portion of screen, above grass line ── */}
       <div
         style={{
           position: 'absolute',
-          top: '50%',
+          top: '38%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
           display: 'flex',
@@ -390,6 +390,9 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
           })
         )}
       </div>
+
+      {/* ── Grass — two-layer ground plane at screen bottom ── */}
+      <GrassLayer />
 
       {/* ── Camera switcher — bottom right ── */}
       {cameras.length > 1 && (
@@ -447,8 +450,16 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
         </div>
       )}
 
-      {/* ── Grass layer — grows up from the bottom ── */}
-      <GrassLayer />
+      {/* ── Vignette — softens screen edges ── */}
+      <div
+        style={{
+          position: 'absolute',
+          inset: 0,
+          background: 'radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.22) 100%)',
+          pointerEvents: 'none',
+          zIndex: 10,
+        }}
+      />
 
       {/* ── Privacy note — bottom center ── */}
       <p
