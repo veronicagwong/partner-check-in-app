@@ -184,10 +184,12 @@ function Blade({
   const { halfBase, halfSVG, svgW, cx, viewBox } = getBladeGeometry(h, w, lean);
   const healthyPath = useMemo(() => getHealthyPath(h, w, lean, cx, halfBase), [h, w, lean, cx, halfBase]);
 
-  // Curl in the same direction as the existing lean.
-  // This guarantees the tip NEVER crosses the stem during interpolation,
-  // which is what causes the hourglass/X twisting artefact.
-  const curlDir     = lean >= 0 ? 1 : -1;
+  // All blades curl the same direction (left).
+  // Mixed curl directions across layers creates X-crossing overlaps between
+  // the front/back layers at the same screen position — forcing one direction
+  // eliminates that entirely. tipX stays at the lean position so no intra-blade
+  // self-intersection during interpolation either.
+  const curlDir     = -1;
   const droopFactor = 0.85 + (bladeIndex % 3) * 0.15;
   const wiltedPath  = useMemo(
     () => getWiltedPath(h, w, lean, cx, halfBase, curlDir, droopFactor),
