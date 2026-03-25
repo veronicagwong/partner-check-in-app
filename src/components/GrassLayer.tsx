@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 
 // ── Wilt state ─────────────────────────────────────────────────────────────────
 // idle      — normal upright state, no transition in effect
@@ -173,35 +173,39 @@ function Blade({
   // Per-blade wilt stagger: 80 ms apart, so blades shrivel sequentially
   const wiltDelay  = bladeIndex * 0.08;
 
-  // ── Compute current path & transitions ──────────────────────────────────────
-  let currentPath: string;
-  let dTransition: string;
+  // ── CSS `d` path morphing via direct DOM — React's style serialiser strips
+  //    unknown properties, so we bypass it with element.style.setProperty ──────
+  const pathRef = useRef<SVGPathElement>(null);
+
+  useEffect(() => {
+    const el = pathRef.current;
+    if (!el) return;
+    if (wiltState === 'wilted') {
+      el.style.transition = `d ${wiltDuration}s ease-in ${wiltDelay}s`;
+      el.style.setProperty('d', `path('${wiltedPath}')`);
+    } else if (wiltState === 'recovering') {
+      el.style.transition = 'd 3s ease-out';
+      el.style.setProperty('d', `path('${healthyPath}')`);
+    } else {
+      el.style.transition = 'none';
+      el.style.setProperty('d', `path('${healthyPath}')`);
+    }
+  }, [wiltState]); // healthyPath/wiltedPath are stable (config props never change)
+
+  // ── Filter for colour transition (grayscale → grey during wilt) ─────────────
   let filterStyle: string;
   let filterTransition: string;
 
   if (wiltState === 'wilted') {
-    currentPath     = wiltedPath;
-    dTransition     = `d ${wiltDuration}s ease-in ${wiltDelay}s`;
-    filterStyle     = 'grayscale(1) brightness(0.70)';
+    filterStyle      = 'grayscale(1) brightness(0.70)';
     filterTransition = `filter ${wiltDuration}s ease-in ${wiltDelay}s`;
   } else if (wiltState === 'recovering') {
-    currentPath     = healthyPath;
-    dTransition     = 'd 3s ease-out';
-    filterStyle     = 'grayscale(0) brightness(1)';
+    filterStyle      = 'grayscale(0) brightness(1)';
     filterTransition = 'filter 3s ease-out';
   } else {
-    // idle — clear transitions so no stale easing carries into the next wilt
-    currentPath     = healthyPath;
-    dTransition     = 'none';
-    filterStyle     = 'grayscale(0) brightness(1)';
+    filterStyle      = 'grayscale(0) brightness(1)';
     filterTransition = 'none';
   }
-
-  // CSS `d` property (Chrome 93+) — requires path('...') wrapper
-  const pathStyle = {
-    d: `path('${currentPath}')`,
-    transition: dTransition,
-  } as React.CSSProperties;
 
   return (
     <div style={{
@@ -236,8 +240,8 @@ function Blade({
                 <stop offset="100%" stopColor={tipColor}  />
               </linearGradient>
             </defs>
-            {/* Path morphs via CSS d property — healthy ↔ wilted */}
-            <path style={pathStyle} fill={`url(#${gradId})`} />
+            {/* d attribute = always-visible fallback; CSS d (set via DOM ref) morphs during wilt */}
+            <path ref={pathRef} d={healthyPath} fill={`url(#${gradId})`} />
           </svg>
         </div>
       </div>
