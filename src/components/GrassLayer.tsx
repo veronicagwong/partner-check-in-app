@@ -111,7 +111,8 @@ function getHealthyPath(h: number, w: number, lean: number, cx: number, halfBase
   ].join(' ');
 }
 
-// Wilted — collapses to ~40% height, tip curls sideways and droops, S-curve body.
+// Wilted — fishhook shape: blade rises straight then arcs hard to one side,
+// tip drooping back down ~65–70% from top. Matches a truly wilted/dead blade.
 // curlDir: +1 = curls right, -1 = curls left
 // droopFactor: 0.85–1.15, varies per blade for organic look
 function getWiltedPath(
@@ -121,21 +122,21 @@ function getWiltedPath(
 ): string {
   const f = (n: number) => n.toFixed(1);
 
-  // Drooped tip: shifts sideways in curl direction, height ~40–44% of original
-  const tipX = cx + curlDir * w * 3.4 * droopFactor + lean * h * 0.08;
-  const tipY = h * (0.50 + droopFactor * 0.09); // ~h*0.58–0.60
+  // Tip: far to the side, drooped deeply (fishhook silhouette)
+  const tipX = cx + curlDir * w * 5.5 * droopFactor + lean * h * 0.05;
+  const tipY = h * (0.56 + droopFactor * 0.10); // ~h*0.64–0.68
 
-  // Left edge — S-curve: lower body bows OPPOSITE to curl, upper leads INTO curl
-  const cp1x = cx - halfBase * 0.65 + curlDir * (-w * 0.7); // bows away from curl
-  const cp1y = h * 0.68;
-  const cp2x = cx + curlDir * w * 1.9;                       // pulls toward curl
-  const cp2y = h * 0.27;
+  // Left edge: lower stem stays near center, then sweeps dramatically toward curl
+  const cp1x = cx - halfBase * 0.5 + curlDir * (-w * 1.2); // pushes hard against curl near base
+  const cp1y = h * 0.56;
+  const cp2x = cx + curlDir * w * 4.0;                      // sweeps aggressively into hook
+  const cp2y = h * 0.06;                                     // near very top — makes tight arc
 
-  // Right edge — arcs back from drooped tip to right base
+  // Right edge: inside of hook, returning to base
   const cp3x = tipX + curlDir * w * 0.4;
-  const cp3y = tipY + h * 0.07;
-  const cp4x = cx + halfBase * 0.55 + curlDir * w * 0.25;
-  const cp4y = h * 0.73;
+  const cp3y = tipY + h * 0.09;
+  const cp4x = cx + halfBase * 1.1 + curlDir * w * 0.4;
+  const cp4y = h * 0.70;
 
   return [
     `M ${f(cx - halfBase)},${h}`,
