@@ -2,7 +2,7 @@ import React from 'react';
 
 // ── Wilt state ─────────────────────────────────────────────────────────────────
 // idle      — normal upright state, no transition in effect
-// wilted    — blades have drooped; ease-in over per-layer wiltDuration
+// wilted    — blades have drooped; SVG path morphs + grayscale filter
 // recovering — blades returning to upright; ease-out 3s
 
 export type WiltState = 'idle' | 'wilted' | 'recovering';
@@ -19,8 +19,9 @@ const FRONT_BASE     = '#4D6638';  // mid-front root
 const FRONT_TIP      = '#82A85E';  // mid-front tip
 const NEAR_BASE      = '#304520';  // near-front — deep shadowed root
 const NEAR_TIP       = '#4E7030';  // near-front — rich dark tip
-const GROW_DUR    = 0.65;
-const STAGGER     = 0.08;
+
+const GROW_DUR = 0.65;
+const STAGGER  = 0.08;
 
 // ── Blade config ──────────────────────────────────────────────────────────────
 
@@ -78,69 +79,129 @@ const FRONT_BLADES: BladeConfig[] = [
   { xPct: 84,  h: 44, w:  7, lean:  0.15, swayDur: 3.1, swayAmp: 4, swayPhase: 0.30 },
 ];
 
-// ── SVG path helper ───────────────────────────────────────────────────────────
+// ── SVG path helpers ───────────────────────────────────────────────────────────
+//
+// Both healthy and wilted paths share the SAME command structure:
+//   M left-base
+//   C cp1 cp2 tip          ← left edge rising to tip
+//   C cp3 cp4 right-base   ← right edge returning to ground
+//   Z
+//
+// Matching structure is required for CSS `d` property morphing (Chrome 93+).
 
-function getBladeSVG(h: number, w: number, lean: number) {
+function getBladeGeometry(h: number, w: number, lean: number) {
   const tipOffsetX = lean * h * 0.35;
   const halfBase   = w / 2;
-  const pad        = 6;
+  const pad        = 8;
   const halfSVG    = Math.max(halfBase + Math.abs(tipOffsetX), halfBase) + pad;
   const svgW       = halfSVG * 2;
   const cx         = halfSVG;
-  const tipX       = cx + tipOffsetX;
+  return { halfBase, halfSVG, svgW, cx, viewBox: `0 0 ${svgW.toFixed(1)} ${h}` };
+}
 
+// Healthy — tall, gently bowed, sharp tip
+function getHealthyPath(h: number, w: number, lean: number, cx: number, halfBase: number): string {
+  const tipX = cx + lean * h * 0.35;
   const f = (n: number) => n.toFixed(1);
-  const path = [
+  return [
     `M ${f(cx - halfBase)},${h}`,
-    // Left edge: control pts bow slightly outward at lower third then taper sharply to tip
-    `C ${f(cx - halfBase * 1.1)},${f(h * 0.65)}`,
-    `  ${f(tipX - w * 0.10)},${f(h * 0.12)}`,
-    `  ${f(tipX)},0`,
-    // Right edge: mirror
-    `C ${f(tipX + w * 0.10)},${f(h * 0.12)}`,
-    `  ${f(cx + halfBase * 1.1)},${f(h * 0.65)}`,
-    `  ${f(cx + halfBase)},${h}`,
+    `C ${f(cx - halfBase * 1.1)},${f(h * 0.65)} ${f(tipX - w * 0.10)},${f(h * 0.12)} ${f(tipX)},0`,
+    `C ${f(tipX + w * 0.10)},${f(h * 0.12)} ${f(cx + halfBase * 1.1)},${f(h * 0.65)} ${f(cx + halfBase)},${h}`,
     'Z',
   ].join(' ');
+}
 
-  return { path, svgW, halfSVG, viewBox: `0 0 ${f(svgW)} ${h}` };
+// Wilted — collapses to ~40% height, tip curls sideways and droops, S-curve body.
+// curlDir: +1 = curls right, -1 = curls left
+// droopFactor: 0.85–1.15, varies per blade for organic look
+function getWiltedPath(
+  h: number, w: number, lean: number,
+  cx: number, halfBase: number,
+  curlDir: number, droopFactor: number,
+): string {
+  const f = (n: number) => n.toFixed(1);
+
+  // Drooped tip: shifts sideways in curl direction, height ~40–44% of original
+  const tipX = cx + curlDir * w * 3.4 * droopFactor + lean * h * 0.08;
+  const tipY = h * (0.50 + droopFactor * 0.09); // ~h*0.58–0.60
+
+  // Left edge — S-curve: lower body bows OPPOSITE to curl, upper leads INTO curl
+  const cp1x = cx - halfBase * 0.65 + curlDir * (-w * 0.7); // bows away from curl
+  const cp1y = h * 0.68;
+  const cp2x = cx + curlDir * w * 1.9;                       // pulls toward curl
+  const cp2y = h * 0.27;
+
+  // Right edge — arcs back from drooped tip to right base
+  const cp3x = tipX + curlDir * w * 0.4;
+  const cp3y = tipY + h * 0.07;
+  const cp4x = cx + halfBase * 0.55 + curlDir * w * 0.25;
+  const cp4y = h * 0.73;
+
+  return [
+    `M ${f(cx - halfBase)},${h}`,
+    `C ${f(cp1x)},${f(cp1y)} ${f(cp2x)},${f(cp2y)} ${f(tipX)},${f(tipY)}`,
+    `C ${f(cp3x)},${f(cp3y)} ${f(cp4x)},${f(cp4y)} ${f(cx + halfBase)},${h}`,
+    'Z',
+  ].join(' ');
 }
 
 // ── Blade renderer ────────────────────────────────────────────────────────────
 
 function Blade({
-  xPct, h, w, lean, swayDur, swayAmp, swayPhase, growDelay, baseColor, tipColor, gradId,
+  xPct, h, w, lean, swayDur, swayAmp, swayPhase,
+  growDelay, bladeIndex, baseColor, tipColor, gradId,
   wiltState, wiltDuration,
 }: BladeConfig & {
-  growDelay: number; baseColor: string; tipColor: string; gradId: string;
-  wiltState: WiltState; wiltDuration: number;
+  growDelay: number;
+  bladeIndex: number;
+  baseColor: string;
+  tipColor: string;
+  gradId: string;
+  wiltState: WiltState;
+  wiltDuration: number;
 }) {
-  const { path, svgW, halfSVG, viewBox } = getBladeSVG(h, w, lean);
-  const swayDelay = growDelay + GROW_DUR + 0.1;
+  const { halfBase, halfSVG, svgW, cx, viewBox } = getBladeGeometry(h, w, lean);
+  const healthyPath = getHealthyPath(h, w, lean, cx, halfBase);
 
-  // Blades droop in their existing lean direction so the motion feels natural
-  const dropDeg = (lean >= 0 ? 1 : -1) * 52;
+  // Each blade has a unique curl direction and droop amount for organic variety
+  const curlDir    = bladeIndex % 2 === 0 ? 1 : -1;
+  const droopFactor = 0.85 + (bladeIndex % 3) * 0.15; // 0.85 | 1.00 | 1.15
 
-  let wiltTransform: string;
-  let wiltFilter: string;
-  let wiltTransition: string;
+  const wiltedPath = getWiltedPath(h, w, lean, cx, halfBase, curlDir, droopFactor);
+
+  const swayDelay  = growDelay + GROW_DUR + 0.1;
+  // Per-blade wilt stagger: 80 ms apart, so blades shrivel sequentially
+  const wiltDelay  = bladeIndex * 0.08;
+
+  // ── Compute current path & transitions ──────────────────────────────────────
+  let currentPath: string;
+  let dTransition: string;
+  let filterStyle: string;
+  let filterTransition: string;
 
   if (wiltState === 'wilted') {
-    // Droop: compress to 35% height, rotate heavily in lean direction, desaturate
-    wiltTransform  = `scaleY(0.35) rotate(${dropDeg}deg)`;
-    wiltFilter     = 'saturate(0.28) brightness(0.80) sepia(0.20)';
-    wiltTransition = `transform ${wiltDuration}s ease-in, filter ${wiltDuration}s ease-in`;
+    currentPath     = wiltedPath;
+    dTransition     = `d ${wiltDuration}s ease-in ${wiltDelay}s`;
+    filterStyle     = 'grayscale(1) brightness(0.70)';
+    filterTransition = `filter ${wiltDuration}s ease-in ${wiltDelay}s`;
   } else if (wiltState === 'recovering') {
-    // Return upright, slow ease-out, restore colour
-    wiltTransform  = 'scaleY(1) rotate(0deg)';
-    wiltFilter     = 'saturate(1) brightness(1) sepia(0)';
-    wiltTransition = 'transform 3s ease-out, filter 3s ease-out';
+    currentPath     = healthyPath;
+    dTransition     = 'd 3s ease-out';
+    filterStyle     = 'grayscale(0) brightness(1)';
+    filterTransition = 'filter 3s ease-out';
   } else {
-    // idle — no transition so the next wilt fires without inheriting a stale easing
-    wiltTransform  = 'scaleY(1) rotate(0deg)';
-    wiltFilter     = 'saturate(1) brightness(1) sepia(0)';
-    wiltTransition = 'none';
+    // idle — clear transitions so no stale easing carries into the next wilt
+    currentPath     = healthyPath;
+    dTransition     = 'none';
+    filterStyle     = 'grayscale(0) brightness(1)';
+    filterTransition = 'none';
   }
+
+  // CSS `d` property (Chrome 93+) — requires path('...') wrapper
+  const pathStyle = {
+    d: `path('${currentPath}')`,
+    transition: dTransition,
+  } as React.CSSProperties;
 
   return (
     <div style={{
@@ -148,35 +209,36 @@ function Blade({
       bottom: 0,
       left: `calc(${xPct}% - ${halfSVG.toFixed(1)}px)`,
     }}>
-      {/* Layer 1 — spring grow-in (scaleY 0 → 1) */}
+      {/* grow-in: scaleY 0 → 1 spring on mount */}
       <div style={{
         transformOrigin: 'bottom center',
         animation: `blade-grow ${GROW_DUR}s cubic-bezier(0.34, 1.56, 0.64, 1) ${growDelay}s both`,
       }}>
-        {/* Layer 2 — wilt/recovery (CSS transition, not keyframe) */}
+        {/* sway + grayscale filter for wilt colour transition */}
         <div style={{
           transformOrigin: 'bottom center',
-          transform: wiltTransform,
-          filter: wiltFilter,
-          transition: wiltTransition,
-        }}>
-          {/* Layer 3 — gentle sway (infinite keyframe rotate) */}
-          <div style={{
-            transformOrigin: 'bottom center',
-            '--sway-amp': `${swayAmp}deg`,
-            animation: `blade-sway ${swayDur}s ease-in-out ${swayDelay + swayPhase}s infinite`,
-          } as React.CSSProperties}>
-            <svg width={svgW} height={h} viewBox={viewBox} fill="none" style={{ display: 'block' }}>
-              <defs>
-                {/* bottom → top: dark base to light tip */}
-                <linearGradient id={gradId} x1="0" y1="1" x2="0" y2="0">
-                  <stop offset="0%"   stopColor={baseColor} />
-                  <stop offset="100%" stopColor={tipColor}  />
-                </linearGradient>
-              </defs>
-              <path d={path} fill={`url(#${gradId})`} />
-            </svg>
-          </div>
+          '--sway-amp': `${swayAmp}deg`,
+          animation: `blade-sway ${swayDur}s ease-in-out ${swayDelay + swayPhase}s infinite`,
+          filter: filterStyle,
+          transition: filterTransition,
+        } as React.CSSProperties}>
+          {/* overflow:visible lets wilted tip extend beyond the SVG bounds */}
+          <svg
+            width={svgW}
+            height={h}
+            viewBox={viewBox}
+            fill="none"
+            style={{ display: 'block', overflow: 'visible' }}
+          >
+            <defs>
+              <linearGradient id={gradId} x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0%"   stopColor={baseColor} />
+                <stop offset="100%" stopColor={tipColor}  />
+              </linearGradient>
+            </defs>
+            {/* Path morphs via CSS d property — healthy ↔ wilted */}
+            <path style={pathStyle} fill={`url(#${gradId})`} />
+          </svg>
         </div>
       </div>
     </div>
@@ -222,6 +284,7 @@ export function GrassLayer({ wiltState }: GrassLayerProps) {
             tipColor={BACK_TIP}
             gradId={`back-blade-${i}`}
             growDelay={i * STAGGER}
+            bladeIndex={i}
             wiltState={wiltState}
             wiltDuration={2.5}
           />
@@ -238,6 +301,7 @@ export function GrassLayer({ wiltState }: GrassLayerProps) {
             tipColor={MIDBACK_TIP}
             gradId={`midback-blade-${i}`}
             growDelay={0.15 + i * STAGGER}
+            bladeIndex={i}
             wiltState={wiltState}
             wiltDuration={2.8}
           />
@@ -254,6 +318,7 @@ export function GrassLayer({ wiltState }: GrassLayerProps) {
             tipColor={FRONT_TIP}
             gradId={`front-blade-${i}`}
             growDelay={0.3 + i * STAGGER}
+            bladeIndex={i}
             wiltState={wiltState}
             wiltDuration={3.1}
           />
@@ -270,6 +335,7 @@ export function GrassLayer({ wiltState }: GrassLayerProps) {
             tipColor={NEAR_TIP}
             gradId={`near-blade-${i}`}
             growDelay={0.5 + i * STAGGER}
+            bladeIndex={i}
             wiltState={wiltState}
             wiltDuration={3.5}
           />
