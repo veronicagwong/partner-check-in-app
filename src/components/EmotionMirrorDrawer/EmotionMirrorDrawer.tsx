@@ -201,9 +201,10 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
     return () => window.removeEventListener('keydown', onKey);
   }, [mounted, handleClose]);
 
-  // ── Sad-hold timer: only wilt if sadness is held for 2.5 s continuously ──
+  // ── Sad-hold timer: only wilt if sadness is held for 1.5 s continuously ──
   useEffect(() => {
     const anySad = faces.some(f => f.emotion === 'sad');
+    console.log('[wilt] emotions:', faces.map(f => f.emotion), '| anySad:', anySad, '| wiltState:', wiltStateRef.current, '| timerActive:', !!sadTimerRef.current);
 
     if (anySad) {
       // Cancel any in-flight recovery
@@ -211,28 +212,33 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
         clearTimeout(recoveryTimerRef.current);
         recoveryTimerRef.current = null;
       }
-      // Start the 2.5 s countdown only if not already counting or already wilted
+      // Start the 1.5 s countdown only if not already counting or already wilted
       if (!sadTimerRef.current && wiltStateRef.current !== 'wilted') {
+        console.log('[wilt] starting 1s sad timer');
         sadTimerRef.current = setTimeout(() => {
           sadTimerRef.current = null;
           wiltStateRef.current = 'wilted';
+          console.log('[wilt] → WILTED');
           setWiltState('wilted');
-        }, 1500);
+        }, 500);
       }
     } else {
       // Emotion left sad — cancel any pending wilt countdown
       if (sadTimerRef.current) {
+        console.log('[wilt] sad lost before timer — resetting');
         clearTimeout(sadTimerRef.current);
         sadTimerRef.current = null;
       }
       // If blades are drooped, begin recovery
       if (wiltStateRef.current === 'wilted') {
         wiltStateRef.current = 'recovering';
+        console.log('[wilt] → RECOVERING');
         setWiltState('recovering');
         // Return to idle once the 3 s recovery animation finishes (+200 ms buffer)
         recoveryTimerRef.current = setTimeout(() => {
           recoveryTimerRef.current = null;
           wiltStateRef.current = 'idle';
+          console.log('[wilt] → IDLE');
           setWiltState('idle');
         }, 3200);
       }
@@ -446,6 +452,25 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
 
       {/* ── Grass — four-layer ground plane; wilts after 2.5 s of sad ── */}
       <GrassLayer wiltState={wiltState} />
+
+      {/* ── Temp debug badge — remove once wilt is confirmed working ── */}
+      <div style={{
+        position: 'absolute', top: 12, left: 12, zIndex: 999,
+        background: 'rgba(0,0,0,0.75)', color: '#fff',
+        fontFamily: 'monospace', fontSize: 13, padding: '8px 12px',
+        borderRadius: 8, lineHeight: 1.8, pointerEvents: 'none',
+      }}>
+        {faces.map((f, i) => (
+          <div key={i}>
+            face {i}: <b style={{ color: f.emotion === 'sad' ? '#7dd' : f.emotion === 'happy' ? '#fd7' : '#aaa' }}>{f.emotion}</b>
+            {f.debug && <span style={{ opacity: 0.7 }}> | frown {f.debug.frown.toFixed(2)} puck {f.debug.pucker.toFixed(2)} score {f.debug.frownScore.toFixed(2)}</span>}
+          </div>
+        ))}
+        <div style={{ marginTop: 4, borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: 4 }}>
+          wilt: <b style={{ color: wiltState === 'wilted' ? '#f77' : wiltState === 'recovering' ? '#7f7' : '#aaa' }}>{wiltState}</b>
+          {' | '}timer: <b>{sadTimerRef.current ? 'running' : 'off'}</b>
+        </div>
+      </div>
 
       {/* ── Camera switcher — bottom right ── */}
       {cameras.length > 1 && (
