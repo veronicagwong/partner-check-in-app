@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useEmotionMirror } from '../../hooks/useEmotionMirror';
 import type { FaceEmotion } from '../../types/emotion';
 import { GrassLayer } from '../GrassLayer';
+import type { WiltState } from '../GrassLayer';
 
 interface Props {
   isOpen: boolean;
@@ -162,6 +163,12 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
   const [deviceId, setDeviceId]       = useState<string | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // ── Grass wilt state — driven by sustained sad detection ─────────────────
+  const [wiltState, setWiltState]     = useState<WiltState>('idle');
+  const wiltStateRef                  = useRef<WiltState>('idle');
+  const sadTimerRef                   = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const recoveryTimerRef              = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const mirrorActive = mounted && !animatingOut;
   const { videoRef, isLoading, cameraPermission, faces, cameras, error } =
     useEmotionMirror({ active: mirrorActive, deviceId });
@@ -193,6 +200,52 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [mounted, handleClose]);
+
+  // ── Sad-hold timer: only wilt if sadness is held for 2.5 s continuously ──
+  useEffect(() => {
+    const anySad = faces.some(f => f.emotion === 'sad');
+
+    if (anySad) {
+      // Cancel any in-flight recovery
+      if (recoveryTimerRef.current) {
+        clearTimeout(recoveryTimerRef.current);
+        recoveryTimerRef.current = null;
+      }
+      // Start the 2.5 s countdown only if not already counting or already wilted
+      if (!sadTimerRef.current && wiltStateRef.current !== 'wilted') {
+        sadTimerRef.current = setTimeout(() => {
+          sadTimerRef.current = null;
+          wiltStateRef.current = 'wilted';
+          setWiltState('wilted');
+        }, 1500);
+      }
+    } else {
+      // Emotion left sad — cancel any pending wilt countdown
+      if (sadTimerRef.current) {
+        clearTimeout(sadTimerRef.current);
+        sadTimerRef.current = null;
+      }
+      // If blades are drooped, begin recovery
+      if (wiltStateRef.current === 'wilted') {
+        wiltStateRef.current = 'recovering';
+        setWiltState('recovering');
+        // Return to idle once the 3 s recovery animation finishes (+200 ms buffer)
+        recoveryTimerRef.current = setTimeout(() => {
+          recoveryTimerRef.current = null;
+          wiltStateRef.current = 'idle';
+          setWiltState('idle');
+        }, 3200);
+      }
+    }
+  }, [faces]);
+
+  // Clean up timers on unmount
+  useEffect(() => {
+    return () => {
+      if (sadTimerRef.current)      clearTimeout(sadTimerRef.current);
+      if (recoveryTimerRef.current) clearTimeout(recoveryTimerRef.current);
+    };
+  }, []);
 
   if (!mounted) return null;
 
@@ -391,8 +444,8 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
         )}
       </div>
 
-      {/* ── Grass — two-layer ground plane at screen bottom ── */}
-      <GrassLayer />
+      {/* ── Grass — four-layer ground plane; wilts after 2.5 s of sad ── */}
+      <GrassLayer wiltState={wiltState} />
 
       {/* ── Camera switcher — bottom right ── */}
       {cameras.length > 1 && (
