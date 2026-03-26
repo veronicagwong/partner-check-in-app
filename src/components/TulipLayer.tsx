@@ -1,154 +1,245 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 // ── Slot layout — 30 positions, organically scattered ────────────────────────
-// Intentionally uneven: clusters in some zones, sparse gaps elsewhere.
-// Heights vary widely so tall and short plants mix naturally.
-// Stagger is non-sequential so nearby flowers don't pop up together.
 const SLOTS = [
   // — first flowers to appear, seeding the scene —
-  { xPct: 38, h: 158, stagger:   0 },   // near centre, first
-  { xPct: 61, h: 144, stagger:  80 },   // right of centre
-  { xPct: 18, h: 171, stagger: 200 },   // left zone
-  { xPct: 82, h: 139, stagger: 130 },   // right zone
-  { xPct:  7, h: 152, stagger: 310 },   // far left, lone
-  { xPct: 54, h: 165, stagger:  50 },   // centre-right cluster start
-  { xPct: 73, h: 148, stagger: 240 },   // right of that
-  { xPct: 29, h: 136, stagger: 170 },   // left-of-centre
+  { xPct: 38, h: 158, stagger:   0 },
+  { xPct: 61, h: 144, stagger:  80 },
+  { xPct: 18, h: 171, stagger: 200 },
+  { xPct: 82, h: 139, stagger: 130 },
+  { xPct:  7, h: 152, stagger: 310 },
+  { xPct: 54, h: 165, stagger:  50 },
+  { xPct: 73, h: 148, stagger: 240 },
+  { xPct: 29, h: 136, stagger: 170 },
 
   // — second burst, filling gaps and building clusters —
-  { xPct: 57, h: 178, stagger:  20 },   // tall one right by slot 5 — cluster
-  { xPct: 44, h: 141, stagger: 360 },   // near slot 0
-  { xPct: 12, h: 162, stagger: 110 },   // left cluster with slot 2
-  { xPct: 91, h: 155, stagger: 290 },   // far right lone
-  { xPct: 67, h: 133, stagger:  70 },   // short, between slots 6 & 3
-  { xPct: 23, h: 169, stagger: 420 },   // joins slot 2 cluster
-  { xPct: 48, h: 145, stagger: 150 },   // centre fill
-  { xPct: 79, h: 175, stagger: 230 },   // tallest right-zone
+  { xPct: 57, h: 178, stagger:  20 },
+  { xPct: 44, h: 141, stagger: 360 },
+  { xPct: 12, h: 162, stagger: 110 },
+  { xPct: 91, h: 155, stagger: 290 },
+  { xPct: 67, h: 133, stagger:  70 },
+  { xPct: 23, h: 169, stagger: 420 },
+  { xPct: 48, h: 145, stagger: 150 },
+  { xPct: 79, h: 175, stagger: 230 },
 
   // — third wave, denser clustering —
-  { xPct: 35, h: 138, stagger: 330 },   // left of centre group
-  { xPct: 59, h: 152, stagger:  40 },   // right of centre, near slot 1
-  { xPct:  4, h: 143, stagger: 190 },   // extreme left edge
-  { xPct: 86, h: 161, stagger: 270 },   // far right cluster with slot 11
-  { xPct: 26, h: 174, stagger:  95 },   // left cluster fills in
-  { xPct: 70, h: 137, stagger: 380 },   // right mid, near slot 6
-  { xPct: 42, h: 156, stagger: 210 },   // centre dense patch
+  { xPct: 35, h: 138, stagger: 330 },
+  { xPct: 59, h: 152, stagger:  40 },
+  { xPct:  4, h: 143, stagger: 190 },
+  { xPct: 86, h: 161, stagger: 270 },
+  { xPct: 26, h: 174, stagger:  95 },
+  { xPct: 70, h: 137, stagger: 380 },
+  { xPct: 42, h: 156, stagger: 210 },
 
   // — fourth wave, finishing touches and micro-clusters —
-  { xPct: 52, h: 147, stagger:  60 },   // tight cluster around centre
-  { xPct: 15, h: 166, stagger: 300 },   // near slot 2 group
-  { xPct: 76, h: 142, stagger: 140 },   // right side fills dense
-  { xPct: 32, h: 153, stagger: 440 },   // left-centre gap fill
-  { xPct: 64, h: 170, stagger:  30 },   // tall right-of-centre
-  { xPct:  9, h: 135, stagger: 350 },   // left cluster small one
-  { xPct: 94, h: 159, stagger: 185 },   // far right edge, lone
+  { xPct: 52, h: 147, stagger:  60 },
+  { xPct: 15, h: 166, stagger: 300 },
+  { xPct: 76, h: 142, stagger: 140 },
+  { xPct: 32, h: 153, stagger: 440 },
+  { xPct: 64, h: 170, stagger:  30 },
+  { xPct:  9, h: 135, stagger: 350 },
+  { xPct: 94, h: 159, stagger: 185 },
 ];
 
-const W  = 68;   // SVG width per dandelion
-const CX = W / 2;
+// ── Flower kind assigned per slot — shuffled so all 5 types spread organically
+// 6 of each kind across 30 slots; never the same kind twice in a row
+const SLOT_KINDS = [
+  0, 2, 1, 4, 3,
+  2, 0, 4, 1, 3,
+  3, 1, 2, 0, 4,
+  4, 3, 0, 2, 1,
+  1, 4, 3, 0, 2,
+  2, 0, 1, 4, 3,
+];
 
-// Spring easing from the Lottie source data
-const SPRING = 'cubic-bezier(0.286, 1, 0.333, 0)';
+const W = 68; // slot container width
 
-// ── Animated wrapper: outer=scale, inner=wobble ───────────────────────────────
-function SpringPart({
-  children, scaleAxis, duration, delay, originX, originY,
-}: {
-  children: React.ReactNode;
-  scaleAxis: 'Y' | 'both';
-  duration: number;
-  delay: number;
-  originX: string;
-  originY: string;
-}) {
-  const growAnim = scaleAxis === 'Y' ? 'tulip-stem-grow' : 'tulip-bloom-grow';
-  const origin   = `${originX} ${originY}`;
-  return (
-    <div style={{ transformOrigin: origin, animation: `${growAnim} ${duration}s ${SPRING} both`, animationDelay: `${delay}s` }}>
-      <div style={{ transformOrigin: origin, animation: `tulip-wobble ${duration * 1.1}s ease-out both`, animationDelay: `${delay}s` }}>
-        {children}
-      </div>
-    </div>
-  );
+// ── Flower definitions ────────────────────────────────────────────────────────
+// Each flower has 3 layers ordered outer-aura → mid-bloom → bright-core.
+// w/h allow oval shapes; bg uses radial-gradient fading to transparent.
+interface LayerDef {
+  w: number;
+  h: number;
+  bg: string;
+  blurPx: number;
+  delayOffset: number; // extra seconds after stem finishes
 }
 
-// ── Dandelion SVG ─────────────────────────────────────────────────────────────
-function DandelionSVG({ h, baseDelay }: { h: number; baseDelay: number }) {
-  const headY   = h * 0.26;          // centre of the puff head (SVG coords, y from top)
-  const headR   = Math.min(h * 0.24, 28);  // radius of the full puff
-  const numRays = 24;
+interface FlowerDef {
+  bloomCY: number; // Y centre of bloom from top of slot (px)
+  layers: LayerDef[];
+}
 
-  // Rays radiating from centre
-  const rays = Array.from({ length: numRays }, (_, i) => {
-    const angle  = (i / numRays) * 2 * Math.PI - Math.PI / 2;
-    const inner  = headR * 0.18;    // start slightly away from centre
-    const outer  = headR * 0.92;    // end near puff edge
-    const tipR   = headR * 0.10;    // tip circle radius
-    const x1 = CX  + inner * Math.cos(angle);
-    const y1 = headY + inner * Math.sin(angle);
-    const x2 = CX  + outer * Math.cos(angle);
-    const y2 = headY + outer * Math.sin(angle);
-    return { x1, y1, x2, y2, tipR, key: i };
-  });
+const FLOWERS: FlowerDef[] = [
+  // ── 0  Poppy — large, coral-red, slightly wider than tall ────────────────
+  {
+    bloomCY: 58,
+    layers: [
+      {
+        w: 220, h: 180,
+        bg: 'radial-gradient(ellipse, rgba(255,180,160,0.40) 0%, transparent 70%)',
+        blurPx: 25, delayOffset: 0.00,
+      },
+      {
+        w: 154, h: 126,
+        bg: 'radial-gradient(ellipse, rgba(244,150,122,0.9) 0%, transparent 70%)',
+        blurPx: 10, delayOffset: 0.15,
+      },
+      {
+        w: 110, h:  90,
+        bg: 'radial-gradient(ellipse, #E8543A 25%, rgba(232,84,58,0) 70%)',
+        blurPx:  3, delayOffset: 0.30,
+      },
+    ],
+  },
 
-  const stemTop = headY + headR * 0.05; // stem meets just below head centre
+  // ── 1  Cloud Bloom — large, white-pink, perfectly round ──────────────────
+  {
+    bloomCY: 65,
+    layers: [
+      {
+        w: 240, h: 240,
+        bg: 'radial-gradient(circle, rgba(255,210,220,0.30) 0%, transparent 70%)',
+        blurPx: 30, delayOffset: 0.00,
+      },
+      {
+        w: 160, h: 160,
+        bg: 'radial-gradient(circle, rgba(255,214,208,0.85) 0%, transparent 70%)',
+        blurPx: 14, delayOffset: 0.15,
+      },
+      {
+        w: 120, h: 120,
+        bg: 'radial-gradient(circle, #FFF5F0 15%, rgba(255,245,240,0) 70%)',
+        blurPx:  4, delayOffset: 0.30,
+      },
+    ],
+  },
+
+  // ── 2  Buttercup — small, punchy, warm golden yellow ─────────────────────
+  {
+    bloomCY: 42,
+    layers: [
+      {
+        w: 140, h: 140,
+        bg: 'radial-gradient(circle, rgba(255,240,140,0.35) 0%, transparent 70%)',
+        blurPx: 18, delayOffset: 0.00,
+      },
+      {
+        w:  90, h:  90,
+        bg: 'radial-gradient(circle, rgba(255,224,102,0.9) 0%, transparent 70%)',
+        blurPx:  8, delayOffset: 0.15,
+      },
+      {
+        w:  60, h:  60,
+        bg: 'radial-gradient(circle, #FFD600 28%, rgba(255,214,0,0) 70%)',
+        blurPx:  2, delayOffset: 0.30,
+      },
+    ],
+  },
+
+  // ── 3  Iris — lilac-purple, taller than wide ──────────────────────────────
+  {
+    bloomCY: 55,
+    layers: [
+      {
+        w: 136, h: 204,
+        bg: 'radial-gradient(ellipse, rgba(200,160,255,0.30) 0%, transparent 70%)',
+        blurPx: 22, delayOffset: 0.00,
+      },
+      {
+        w:  88, h: 132,
+        bg: 'radial-gradient(ellipse, rgba(221,182,255,0.85) 0%, transparent 70%)',
+        blurPx: 10, delayOffset: 0.15,
+      },
+      {
+        w:  60, h:  90,
+        bg: 'radial-gradient(ellipse, #C084FC 25%, rgba(192,132,252,0) 70%)',
+        blurPx:  3, delayOffset: 0.30,
+      },
+    ],
+  },
+
+  // ── 4  Mist Flower — medium, cool pink, very diffuse ─────────────────────
+  {
+    bloomCY: 60,
+    layers: [
+      {
+        w: 220, h: 220,
+        bg: 'radial-gradient(circle, rgba(255,180,220,0.25) 0%, transparent 70%)',
+        blurPx: 35, delayOffset: 0.00,
+      },
+      {
+        w: 130, h: 130,
+        bg: 'radial-gradient(circle, rgba(255,179,217,0.80) 0%, transparent 70%)',
+        blurPx: 16, delayOffset: 0.15,
+      },
+      {
+        w:  80, h:  80,
+        bg: 'radial-gradient(circle, #FF6EB4 18%, rgba(255,110,180,0) 70%)',
+        blurPx:  5, delayOffset: 0.30,
+      },
+    ],
+  },
+];
+
+// ── Flower bloom ──────────────────────────────────────────────────────────────
+function FlowerBloom({ h, baseDelay, kind }: {
+  h: number; baseDelay: number; kind: number;
+}) {
+  const def      = FLOWERS[kind];
+  const stemTop  = def.bloomCY + 6; // stem starts a few px below bloom centre
 
   return (
     <div style={{ position: 'relative', width: W, height: h }}>
 
-      {/* ── Part 1: Stem — grows upward from ground ── */}
-      <div style={{ position: 'absolute', inset: 0 }}>
-        <SpringPart scaleAxis="Y" duration={0.60} delay={baseDelay}
-          originX={`${CX}px`} originY={`${h}px`}>
-          <svg width={W} height={h} viewBox={`0 0 ${W} ${h}`} fill="none" style={{ display: 'block' }}>
-            {/* main stem */}
-            <line
-              x1={CX} y1={stemTop}
-              x2={CX} y2={h}
-              stroke="#7ab86a" strokeWidth={2.5} strokeLinecap="round"
-            />
-          </svg>
-        </SpringPart>
-      </div>
+      {/* ── Stem: soft gradient strip, grows from ground up ── */}
+      <div style={{
+        position:        'absolute',
+        left:            W / 2 - 1,
+        top:             stemTop,
+        width:           2,
+        height:          h - stemTop,
+        background:      'linear-gradient(to bottom, rgba(130,190,110,0.85), rgba(130,190,110,0.25))',
+        filter:          'blur(1px)',
+        borderRadius:    2,
+        transformOrigin: 'bottom center',
+        animation:       `tulip-stem-grow 0.5s ease-out ${baseDelay}s both`,
+      }} />
 
-      {/* ── Part 2: Dandelion head — starts AFTER stem finishes, springs small→big ── */}
-      <div style={{ position: 'absolute', inset: 0 }}>
-        <SpringPart scaleAxis="both" duration={0.55} delay={baseDelay + 0.60}
-          originX={`${CX}px`} originY={`${headY}px`}>
-          <svg width={W} height={h} viewBox={`0 0 ${W} ${h}`} fill="none" style={{ display: 'block' }}>
-            {/* soft glow halo */}
-            <circle cx={CX} cy={headY} r={headR} fill="rgba(255,255,220,0.35)" />
-
-            {/* rays */}
-            {rays.map(r => (
-              <React.Fragment key={r.key}>
-                <line
-                  x1={r.x1} y1={r.y1} x2={r.x2} y2={r.y2}
-                  stroke="#d8d8b0" strokeWidth={1.2} strokeLinecap="round"
-                />
-                {/* seed teardrop at tip */}
-                <circle cx={r.x2} cy={r.y2} r={r.tipR} fill="#eeeed8" />
-              </React.Fragment>
-            ))}
-
-            {/* centre dot */}
-            <circle cx={CX} cy={headY} r={headR * 0.14} fill="#e8d840" />
-            <circle cx={CX} cy={headY} r={headR * 0.08} fill="#c8b820" />
-          </svg>
-        </SpringPart>
-      </div>
+      {/* ── Bloom layers: outer aura → mid → core ── */}
+      {def.layers.map((layer, li) => (
+        <div
+          key={li}
+          style={{
+            position:  'absolute',
+            left:      '50%',
+            top:       def.bloomCY,
+            transform: 'translate(-50%, -50%)',
+          }}
+        >
+          <div style={{
+            width:        layer.w,
+            height:       layer.h,
+            background:   layer.bg,
+            filter:       `blur(${layer.blurPx}px)`,
+            borderRadius: '50%',
+            mixBlendMode: 'screen' as React.CSSProperties['mixBlendMode'],
+            animation:    `flower-bloom 2s ease-out ${baseDelay + 0.35 + layer.delayOffset}s both`,
+          }} />
+        </div>
+      ))}
 
     </div>
   );
 }
 
 // ── Single slot with show/hide logic ─────────────────────────────────────────
-function Dandelion({ visible, h, stagger, xPct }: {
-  visible: boolean; h: number; stagger: number; xPct: number;
+function Flower({ visible, h, stagger, xPct, kind }: {
+  visible: boolean; h: number; stagger: number; xPct: number; kind: number;
 }) {
-  const [gen, setGen] = useState(0);
-  const prevVisible   = useRef(false);
-  const timerRef      = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [gen, setGen]   = useState(0);
+  const prevVisible     = useRef(false);
+  const timerRef        = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (visible && !prevVisible.current) {
@@ -174,10 +265,10 @@ function Dandelion({ visible, h, stagger, xPct }: {
       width:         W,
       height:        h,
       opacity:       visible ? 1 : 0,
-      transition:    visible ? 'none' : 'opacity 0.5s ease',
+      transition:    visible ? 'none' : 'opacity 0.8s ease',
       pointerEvents: 'none',
     }}>
-      {gen > 0 && <DandelionSVG key={gen} h={h} baseDelay={0} />}
+      {gen > 0 && <FlowerBloom key={gen} h={h} baseDelay={0} kind={kind} />}
     </div>
   );
 }
@@ -196,7 +287,14 @@ export function TulipLayer({ count }: { count: number }) {
       zIndex:        5,
     }}>
       {SLOTS.map((s, i) => (
-        <Dandelion key={i} visible={i < count} h={s.h} stagger={s.stagger} xPct={s.xPct} />
+        <Flower
+          key={i}
+          visible={i < count}
+          h={s.h}
+          stagger={s.stagger}
+          xPct={s.xPct}
+          kind={SLOT_KINDS[i]}
+        />
       ))}
     </div>
   );

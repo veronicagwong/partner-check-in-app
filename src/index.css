@@ -123,6 +123,13 @@ body.drawer-open {
   100% { transform: rotate(0deg);    }
 }
 
+/* ── Flower bloom (aura layers: scale 0 → 1, slow ease-out) ──────────────── */
+
+@keyframes flower-bloom {
+  from { transform: scale(0); opacity: 0; }
+  to   { transform: scale(1); opacity: 1; }
+}
+
 /* ── Grass blade animations ───────────────────────────────────────────────── */
 
 @keyframes blade-grow {
