@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 
 // ── Slot layout — 30 positions, organically scattered ────────────────────────
 const SLOTS = [
-  // — first flowers to appear, seeding the scene —
   { xPct: 38, h: 158, stagger:   0 },
   { xPct: 61, h: 144, stagger:  80 },
   { xPct: 18, h: 171, stagger: 200 },
@@ -11,8 +10,6 @@ const SLOTS = [
   { xPct: 54, h: 165, stagger:  50 },
   { xPct: 73, h: 148, stagger: 240 },
   { xPct: 29, h: 136, stagger: 170 },
-
-  // — second burst, filling gaps and building clusters —
   { xPct: 57, h: 178, stagger:  20 },
   { xPct: 44, h: 141, stagger: 360 },
   { xPct: 12, h: 162, stagger: 110 },
@@ -21,8 +18,6 @@ const SLOTS = [
   { xPct: 23, h: 169, stagger: 420 },
   { xPct: 48, h: 145, stagger: 150 },
   { xPct: 79, h: 175, stagger: 230 },
-
-  // — third wave, denser clustering —
   { xPct: 35, h: 138, stagger: 330 },
   { xPct: 59, h: 152, stagger:  40 },
   { xPct:  4, h: 143, stagger: 190 },
@@ -30,8 +25,6 @@ const SLOTS = [
   { xPct: 26, h: 174, stagger:  95 },
   { xPct: 70, h: 137, stagger: 380 },
   { xPct: 42, h: 156, stagger: 210 },
-
-  // — fourth wave, finishing touches and micro-clusters —
   { xPct: 52, h: 147, stagger:  60 },
   { xPct: 15, h: 166, stagger: 300 },
   { xPct: 76, h: 142, stagger: 140 },
@@ -41,8 +34,7 @@ const SLOTS = [
   { xPct: 94, h: 159, stagger: 185 },
 ];
 
-// ── Flower kind assigned per slot — shuffled so all 5 types spread organically
-// 6 of each kind across 30 slots; never the same kind twice in a row
+// Shuffle so 5 types spread organically — 6 of each, never same kind twice in a row
 const SLOT_KINDS = [
   0, 2, 1, 4, 3,
   2, 0, 4, 1, 3,
@@ -54,188 +46,290 @@ const SLOT_KINDS = [
 
 const W = 68; // slot container width
 
-// ── Flower definitions ────────────────────────────────────────────────────────
-// Each flower has 3 layers ordered outer-aura → mid-bloom → bright-core.
-// w/h allow oval shapes; bg uses radial-gradient fading to transparent.
-interface LayerDef {
-  w: number;
-  h: number;
-  bg: string;
-  blurPx: number;
-  delayOffset: number; // extra seconds after stem finishes
-}
-
-interface FlowerDef {
-  bloomCY: number; // Y centre of bloom from top of slot (px)
-  layers: LayerDef[];
-}
-
-const FLOWERS: FlowerDef[] = [
-  // ── 0  Poppy — large, coral-red, slightly wider than tall ────────────────
-  {
-    bloomCY: 58,
-    layers: [
-      {
-        w: 220, h: 180,
-        bg: 'radial-gradient(ellipse, rgba(255,180,160,0.40) 0%, transparent 70%)',
-        blurPx: 25, delayOffset: 0.00,
-      },
-      {
-        w: 154, h: 126,
-        bg: 'radial-gradient(ellipse, rgba(244,150,122,0.9) 0%, transparent 70%)',
-        blurPx: 10, delayOffset: 0.04,
-      },
-      {
-        w: 110, h:  90,
-        bg: 'radial-gradient(ellipse, #E8543A 25%, rgba(232,84,58,0) 70%)',
-        blurPx:  3, delayOffset: 0.08,
-      },
-    ],
-  },
-
-  // ── 1  Cloud Bloom — large, white-pink, perfectly round ──────────────────
-  {
-    bloomCY: 65,
-    layers: [
-      {
-        w: 240, h: 240,
-        bg: 'radial-gradient(circle, rgba(255,210,220,0.30) 0%, transparent 70%)',
-        blurPx: 30, delayOffset: 0.00,
-      },
-      {
-        w: 160, h: 160,
-        bg: 'radial-gradient(circle, rgba(255,214,208,0.85) 0%, transparent 70%)',
-        blurPx: 14, delayOffset: 0.04,
-      },
-      {
-        w: 120, h: 120,
-        bg: 'radial-gradient(circle, #FFF5F0 15%, rgba(255,245,240,0) 70%)',
-        blurPx:  4, delayOffset: 0.08,
-      },
-    ],
-  },
-
-  // ── 2  Buttercup — small, punchy, warm golden yellow ─────────────────────
-  {
-    bloomCY: 42,
-    layers: [
-      {
-        w: 140, h: 140,
-        bg: 'radial-gradient(circle, rgba(255,240,140,0.35) 0%, transparent 70%)',
-        blurPx: 18, delayOffset: 0.00,
-      },
-      {
-        w:  90, h:  90,
-        bg: 'radial-gradient(circle, rgba(255,224,102,0.9) 0%, transparent 70%)',
-        blurPx:  8, delayOffset: 0.04,
-      },
-      {
-        w:  60, h:  60,
-        bg: 'radial-gradient(circle, #FFD600 28%, rgba(255,214,0,0) 70%)',
-        blurPx:  2, delayOffset: 0.08,
-      },
-    ],
-  },
-
-  // ── 3  Iris — lilac-purple, taller than wide ──────────────────────────────
-  {
-    bloomCY: 55,
-    layers: [
-      {
-        w: 136, h: 204,
-        bg: 'radial-gradient(ellipse, rgba(200,160,255,0.30) 0%, transparent 70%)',
-        blurPx: 22, delayOffset: 0.00,
-      },
-      {
-        w:  88, h: 132,
-        bg: 'radial-gradient(ellipse, rgba(221,182,255,0.85) 0%, transparent 70%)',
-        blurPx: 10, delayOffset: 0.04,
-      },
-      {
-        w:  60, h:  90,
-        bg: 'radial-gradient(ellipse, #C084FC 25%, rgba(192,132,252,0) 70%)',
-        blurPx:  3, delayOffset: 0.08,
-      },
-    ],
-  },
-
-  // ── 4  Mist Flower — medium, cool pink, very diffuse ─────────────────────
-  {
-    bloomCY: 60,
-    layers: [
-      {
-        w: 220, h: 220,
-        bg: 'radial-gradient(circle, rgba(255,180,220,0.25) 0%, transparent 70%)',
-        blurPx: 35, delayOffset: 0.00,
-      },
-      {
-        w: 130, h: 130,
-        bg: 'radial-gradient(circle, rgba(255,179,217,0.80) 0%, transparent 70%)',
-        blurPx: 16, delayOffset: 0.04,
-      },
-      {
-        w:  80, h:  80,
-        bg: 'radial-gradient(circle, #FF6EB4 18%, rgba(255,110,180,0) 70%)',
-        blurPx:  5, delayOffset: 0.08,
-      },
-    ],
-  },
+// ── Per-flower SVG dimensions ─────────────────────────────────────────────────
+// bloomTop = distance from slot top to bottom of SVG / top of stem (px)
+const FLOWER_META = [
+  { svgW: 130, svgH: 118, bloomTop: 70 }, // 0 Poppy
+  { svgW: 142, svgH: 130, bloomTop: 82 }, // 1 Peony
+  { svgW: 112, svgH: 100, bloomTop: 56 }, // 2 Buttercup
+  { svgW: 120, svgH: 114, bloomTop: 66 }, // 3 Cosmos
+  { svgW: 122, svgH: 110, bloomTop: 66 }, // 4 Wild Rose
 ];
 
-// ── Flower bloom ──────────────────────────────────────────────────────────────
-function FlowerBloom({ h, baseDelay, kind }: {
-  h: number; baseDelay: number; kind: number;
+// ── SVG flower components ─────────────────────────────────────────────────────
+// Each uid is the slot index as a string, making all filter/gradient IDs page-unique.
+
+// 0 — Poppy: 5 large rounded petals, bold coral-red
+function PoppySVG({ uid }: { uid: string }) {
+  const cx = 65, cy = 72;
+  const N = 5, off = 26, rx = 19, ry = 29;
+  const pts = Array.from({ length: N }, (_, i) => i * (360 / N));
+  return (
+    <svg width={130} height={118} viewBox="0 0 130 118" overflow="visible" style={{ display: 'block' }}>
+      <defs>
+        <radialGradient id={`pp-g-${uid}`} cx="50%" cy="65%" r="60%">
+          <stop offset="0%"   stopColor="#F9AE90" />
+          <stop offset="55%"  stopColor="#E8543A" />
+          <stop offset="100%" stopColor="#B0301A" />
+        </radialGradient>
+        {/* soft edge blur merged back with source for painted look */}
+        <filter id={`pp-f-${uid}`} x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="1.8" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        {/* outer glow */}
+        <filter id={`pp-glow-${uid}`} x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="7" />
+        </filter>
+      </defs>
+      {/* outer glow pass */}
+      <g opacity="0.45" filter={`url(#pp-glow-${uid})`}>
+        {pts.map(a => (
+          <ellipse key={a} cx={cx} cy={cy - off} rx={rx} ry={ry}
+            fill="#F4967A" transform={`rotate(${a},${cx},${cy})`} />
+        ))}
+      </g>
+      {/* petals */}
+      {pts.map(a => (
+        <ellipse key={a} cx={cx} cy={cy - off} rx={rx} ry={ry}
+          fill={`url(#pp-g-${uid})`}
+          filter={`url(#pp-f-${uid})`}
+          transform={`rotate(${a},${cx},${cy})`} />
+      ))}
+      {/* dark centre + golden boss */}
+      <circle cx={cx} cy={cy} r={9}   fill="#2A0808" />
+      <circle cx={cx} cy={cy} r={5}   fill="#FFD600" />
+      {Array.from({ length: 6 }, (_, i) => {
+        const a = (i / 6) * 2 * Math.PI;
+        return <circle key={i} cx={cx + Math.cos(a) * 3.6} cy={cy + Math.sin(a) * 3.6}
+          r={1.4} fill="#FFB000" />;
+      })}
+    </svg>
+  );
+}
+
+// 1 — Peony: 3 rings of petals layered outer→inner, blush pink
+function PeonySVG({ uid }: { uid: string }) {
+  const cx = 71, cy = 76;
+  // rings rendered back→front (outer last = appears on top → wrong for a peony)
+  // Peony outer petals should be BEHIND inner → render outer first
+  const rings = [
+    { n: 7, off: 34, rx: 14, ry: 23, fill: '#FFD6D0', rot: 0  },
+    { n: 6, off: 22, rx: 12, ry: 17, fill: '#FFC0B4', rot: 15 },
+    { n: 5, off: 13, rx:  9, ry: 13, fill: '#FFAAA0', rot: 6  },
+  ];
+  return (
+    <svg width={142} height={130} viewBox="0 0 142 130" overflow="visible" style={{ display: 'block' }}>
+      <defs>
+        <filter id={`pe-f-${uid}`} x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="1.4" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id={`pe-glow-${uid}`} x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="10" />
+        </filter>
+      </defs>
+      {/* large diffuse glow */}
+      <circle cx={cx} cy={cy} r={40} fill="rgba(255,195,188,0.5)" filter={`url(#pe-glow-${uid})`} />
+      {rings.map((ring) => (
+        Array.from({ length: ring.n }, (_, i) => (
+          <ellipse key={`${ring.n}-${i}`}
+            cx={cx} cy={cy - ring.off} rx={ring.rx} ry={ring.ry}
+            fill={ring.fill}
+            filter={`url(#pe-f-${uid})`}
+            transform={`rotate(${ring.rot + i * (360 / ring.n)},${cx},${cy})`} />
+        ))
+      ))}
+      {/* centre */}
+      <circle cx={cx} cy={cy} r={7}   fill="#FFF5F0" />
+      {Array.from({ length: 8 }, (_, i) => {
+        const a = (i / 8) * 2 * Math.PI;
+        return <circle key={i} cx={cx + Math.cos(a) * 4.2} cy={cy + Math.sin(a) * 4.2}
+          r={1.5} fill="#FFD600" />;
+      })}
+    </svg>
+  );
+}
+
+// 2 — Buttercup: 6 bright yellow petals, large bold orange centre
+function ButtercupSVG({ uid }: { uid: string }) {
+  const cx = 56, cy = 58;
+  const N = 6, off = 21, rx = 14, ry = 22;
+  const pts = Array.from({ length: N }, (_, i) => i * (360 / N));
+  return (
+    <svg width={112} height={100} viewBox="0 0 112 100" overflow="visible" style={{ display: 'block' }}>
+      <defs>
+        <radialGradient id={`bc-g-${uid}`} cx="50%" cy="80%" r="65%">
+          <stop offset="0%"   stopColor="#FFEE88" />
+          <stop offset="65%"  stopColor="#FFD600" />
+          <stop offset="100%" stopColor="#E8B800" />
+        </radialGradient>
+        <radialGradient id={`bc-c-${uid}`} cx="38%" cy="38%" r="65%">
+          <stop offset="0%"   stopColor="#FFA400" />
+          <stop offset="100%" stopColor="#D86000" />
+        </radialGradient>
+        <filter id={`bc-f-${uid}`} x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="1.0" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id={`bc-glow-${uid}`} x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="6" />
+        </filter>
+      </defs>
+      <g opacity="0.55" filter={`url(#bc-glow-${uid})`}>
+        {pts.map(a => (
+          <ellipse key={a} cx={cx} cy={cy - off} rx={rx} ry={ry}
+            fill="#FFD600" transform={`rotate(${a},${cx},${cy})`} />
+        ))}
+      </g>
+      {pts.map(a => (
+        <ellipse key={a} cx={cx} cy={cy - off} rx={rx} ry={ry}
+          fill={`url(#bc-g-${uid})`}
+          filter={`url(#bc-f-${uid})`}
+          transform={`rotate(${a},${cx},${cy})`} />
+      ))}
+      <circle cx={cx} cy={cy} r={13} fill={`url(#bc-c-${uid})`} />
+      <circle cx={cx} cy={cy} r={7}  fill="#FFD600" />
+      {Array.from({ length: 8 }, (_, i) => {
+        const a = (i / 8) * 2 * Math.PI;
+        return <circle key={i} cx={cx + Math.cos(a) * 5} cy={cy + Math.sin(a) * 5}
+          r={1} fill="#8B4000" />;
+      })}
+    </svg>
+  );
+}
+
+// 3 — Cosmos: 8 narrow elongated petals, lilac-purple
+function CosmosSVG({ uid }: { uid: string }) {
+  const cx = 60, cy = 66;
+  const N = 8, off = 26, rx = 10, ry = 29;
+  const pts = Array.from({ length: N }, (_, i) => i * (360 / N));
+  return (
+    <svg width={120} height={114} viewBox="0 0 120 114" overflow="visible" style={{ display: 'block' }}>
+      <defs>
+        <radialGradient id={`co-g-${uid}`} cx="50%" cy="85%" r="70%">
+          <stop offset="0%"   stopColor="#EDD8FF" />
+          <stop offset="60%"  stopColor="#C084FC" />
+          <stop offset="100%" stopColor="#8030D8" />
+        </radialGradient>
+        <filter id={`co-f-${uid}`} x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="1.2" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id={`co-glow-${uid}`} x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="6" />
+        </filter>
+      </defs>
+      <g opacity="0.5" filter={`url(#co-glow-${uid})`}>
+        {pts.map(a => (
+          <ellipse key={a} cx={cx} cy={cy - off} rx={rx} ry={ry}
+            fill="#C084FC" transform={`rotate(${a},${cx},${cy})`} />
+        ))}
+      </g>
+      {pts.map(a => (
+        <ellipse key={a} cx={cx} cy={cy - off} rx={rx} ry={ry}
+          fill={`url(#co-g-${uid})`}
+          filter={`url(#co-f-${uid})`}
+          transform={`rotate(${a},${cx},${cy})`} />
+      ))}
+      <circle cx={cx} cy={cy} r={7}   fill="#FFE040" />
+      <circle cx={cx} cy={cy} r={3.5} fill="#FF9000" />
+    </svg>
+  );
+}
+
+// 4 — Wild Rose: 5 petals, hot pink with creamy centre and stamens
+function WildRoseSVG({ uid }: { uid: string }) {
+  const cx = 61, cy = 66;
+  const N = 5, off = 25, rx = 18, ry = 26;
+  const pts = Array.from({ length: N }, (_, i) => i * (360 / N));
+  return (
+    <svg width={122} height={110} viewBox="0 0 122 110" overflow="visible" style={{ display: 'block' }}>
+      <defs>
+        <radialGradient id={`wr-g-${uid}`} cx="50%" cy="58%" r="68%">
+          <stop offset="0%"   stopColor="#FFD8EC" />
+          <stop offset="52%"  stopColor="#FF6EB4" />
+          <stop offset="100%" stopColor="#CC2880" />
+        </radialGradient>
+        <filter id={`wr-f-${uid}`} x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="1.5" result="b" />
+          <feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
+        <filter id={`wr-glow-${uid}`} x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="7" />
+        </filter>
+      </defs>
+      <g opacity="0.45" filter={`url(#wr-glow-${uid})`}>
+        {pts.map(a => (
+          <ellipse key={a} cx={cx} cy={cy - off} rx={rx} ry={ry}
+            fill="#FF6EB4" transform={`rotate(${a},${cx},${cy})`} />
+        ))}
+      </g>
+      {pts.map(a => (
+        <ellipse key={a} cx={cx} cy={cy - off} rx={rx} ry={ry}
+          fill={`url(#wr-g-${uid})`}
+          filter={`url(#wr-f-${uid})`}
+          transform={`rotate(${a},${cx},${cy})`} />
+      ))}
+      {/* creamy centre */}
+      <circle cx={cx} cy={cy} r={10} fill="#FFF8F0" />
+      <circle cx={cx} cy={cy} r={5}  fill="#FFF0A8" />
+      {Array.from({ length: 8 }, (_, i) => {
+        const a = (i / 8) * 2 * Math.PI;
+        return <circle key={i} cx={cx + Math.cos(a) * 4.8} cy={cy + Math.sin(a) * 4.8}
+          r={1.3} fill="#FFD200" />;
+      })}
+    </svg>
+  );
+}
+
+const FLOWER_SVGS = [PoppySVG, PeonySVG, ButtercupSVG, CosmosSVG, WildRoseSVG];
+
+// ── FlowerBloom: stem + positioned/animated SVG head ─────────────────────────
+function FlowerBloom({ h, baseDelay, kind, uid }: {
+  h: number; baseDelay: number; kind: number; uid: string;
 }) {
-  const def      = FLOWERS[kind];
-  const stemTop  = def.bloomCY + 6; // stem starts a few px below bloom centre
+  const meta        = FLOWER_META[kind];
+  const FlowerComp  = FLOWER_SVGS[kind];
+  const stemTop     = meta.bloomTop;
 
   return (
     <div style={{ position: 'relative', width: W, height: h }}>
 
-      {/* ── Stem: soft gradient strip, grows from ground up ── */}
+      {/* Stem — grows upward from ground */}
       <div style={{
         position:        'absolute',
         left:            W / 2 - 1,
         top:             stemTop,
         width:           2,
         height:          h - stemTop,
-        background:      'linear-gradient(to bottom, rgba(130,190,110,0.85), rgba(130,190,110,0.25))',
-        filter:          'blur(1px)',
+        background:      'linear-gradient(to bottom, rgba(118,180,88,0.9), rgba(100,158,68,0.3))',
+        filter:          'blur(0.5px)',
         borderRadius:    2,
         transformOrigin: 'bottom center',
-        animation:       `tulip-stem-grow 0.5s ease-out ${baseDelay}s both`,
+        animation:       `tulip-stem-grow 0.45s ease-out ${baseDelay}s both`,
       }} />
 
-      {/* ── Bloom layers: outer aura → mid → core ── */}
-      {def.layers.map((layer, li) => (
-        <div
-          key={li}
-          style={{
-            position:  'absolute',
-            left:      '50%',
-            top:       def.bloomCY,
-            transform: 'translate(-50%, -50%)',
-          }}
-        >
-          <div style={{
-            width:        layer.w,
-            height:       layer.h,
-            background:   layer.bg,
-            filter:       `blur(${layer.blurPx}px)`,
-            borderRadius: '50%',
-            mixBlendMode: 'screen' as React.CSSProperties['mixBlendMode'],
-            animation:    `flower-bloom 0.15s ease-out ${baseDelay + 0.35 + layer.delayOffset}s both`,
-          }} />
-        </div>
-      ))}
+      {/* Flower head — scales up from stem connection point */}
+      <div style={{
+        position:        'absolute',
+        left:            W / 2 - meta.svgW / 2,
+        top:             meta.bloomTop - meta.svgH,
+        // transform-origin at bottom-centre of SVG so it grows from the stem
+        transformOrigin: `${meta.svgW / 2}px ${meta.svgH}px`,
+        animation:       `flower-bloom 0.15s ease-out ${baseDelay + 0.35}s both`,
+      }}>
+        <FlowerComp uid={uid} />
+      </div>
 
     </div>
   );
 }
 
-// ── Single slot with show/hide logic ─────────────────────────────────────────
-function Flower({ visible, h, stagger, xPct, kind }: {
-  visible: boolean; h: number; stagger: number; xPct: number; kind: number;
+// ── Single slot ───────────────────────────────────────────────────────────────
+function Flower({ visible, h, stagger, xPct, kind, uid }: {
+  visible: boolean; h: number; stagger: number;
+  xPct: number; kind: number; uid: string;
 }) {
   const [gen, setGen]   = useState(0);
   const prevVisible     = useRef(false);
@@ -268,7 +362,7 @@ function Flower({ visible, h, stagger, xPct, kind }: {
       transition:    visible ? 'none' : 'opacity 0.8s ease',
       pointerEvents: 'none',
     }}>
-      {gen > 0 && <FlowerBloom key={gen} h={h} baseDelay={0} kind={kind} />}
+      {gen > 0 && <FlowerBloom key={gen} h={h} baseDelay={0} kind={kind} uid={uid} />}
     </div>
   );
 }
@@ -294,6 +388,7 @@ export function TulipLayer({ count }: { count: number }) {
           stagger={s.stagger}
           xPct={s.xPct}
           kind={SLOT_KINDS[i]}
+          uid={String(i)}
         />
       ))}
     </div>
