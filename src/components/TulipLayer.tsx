@@ -4,36 +4,36 @@ import React, { useEffect, useRef, useState } from 'react';
 // xPct clamped to [15, 85] — matching the grass left/right margins so edges stay flower-free.
 // Order is shuffled each smile session; these are the positional pool, not a fixed sequence.
 const SLOTS = [
-  { xPct: 38, h: 178, stagger:   0 },
-  { xPct: 61, h: 164, stagger:  80 },
-  { xPct: 18, h: 192, stagger: 200 },
-  { xPct: 82, h: 160, stagger: 130 },
-  { xPct: 16, h: 172, stagger: 310 },
-  { xPct: 54, h: 185, stagger:  50 },
-  { xPct: 73, h: 168, stagger: 240 },
-  { xPct: 29, h: 156, stagger: 170 },
-  { xPct: 57, h: 198, stagger:  20 },
-  { xPct: 44, h: 162, stagger: 360 },
-  { xPct: 22, h: 182, stagger: 110 },
-  { xPct: 83, h: 175, stagger: 290 },
-  { xPct: 67, h: 153, stagger:  70 },
-  { xPct: 23, h: 189, stagger: 420 },
-  { xPct: 48, h: 165, stagger: 150 },
-  { xPct: 79, h: 195, stagger: 230 },
-  { xPct: 35, h: 158, stagger: 330 },
-  { xPct: 59, h: 172, stagger:  40 },
-  { xPct: 17, h: 163, stagger: 190 },
-  { xPct: 84, h: 181, stagger: 270 },
-  { xPct: 26, h: 194, stagger:  95 },
-  { xPct: 70, h: 157, stagger: 380 },
-  { xPct: 45, h: 225, stagger: 210 },  // central tall depth-4 — reaches into face area
-  { xPct: 52, h: 167, stagger:  60 },
-  { xPct: 15, h: 186, stagger: 300 },
-  { xPct: 76, h: 162, stagger: 140 },
-  { xPct: 32, h: 173, stagger: 440 },
-  { xPct: 64, h: 190, stagger:  30 },
-  { xPct: 19, h: 155, stagger: 350 },
-  { xPct: 81, h: 179, stagger: 185 },
+  { xPct: 38, h: 238, stagger:   0 },
+  { xPct: 61, h: 224, stagger:  80 },
+  { xPct: 18, h: 252, stagger: 200 },
+  { xPct: 82, h: 220, stagger: 130 },
+  { xPct: 16, h: 232, stagger: 310 },
+  { xPct: 54, h: 245, stagger:  50 },
+  { xPct: 73, h: 228, stagger: 240 },
+  { xPct: 29, h: 216, stagger: 170 },
+  { xPct: 57, h: 258, stagger:  20 },
+  { xPct: 44, h: 222, stagger: 360 },
+  { xPct: 22, h: 242, stagger: 110 },
+  { xPct: 83, h: 235, stagger: 290 },
+  { xPct: 67, h: 213, stagger:  70 },
+  { xPct: 23, h: 249, stagger: 420 },
+  { xPct: 48, h: 225, stagger: 150 },
+  { xPct: 79, h: 255, stagger: 230 },
+  { xPct: 35, h: 218, stagger: 330 },
+  { xPct: 59, h: 232, stagger:  40 },
+  { xPct: 17, h: 223, stagger: 190 },
+  { xPct: 84, h: 241, stagger: 270 },
+  { xPct: 26, h: 254, stagger:  95 },
+  { xPct: 70, h: 217, stagger: 380 },
+  { xPct: 45, h: 295, stagger: 210 },  // central tall depth-4 — reaches into face area
+  { xPct: 52, h: 227, stagger:  60 },
+  { xPct: 15, h: 246, stagger: 300 },
+  { xPct: 76, h: 222, stagger: 140 },
+  { xPct: 32, h: 233, stagger: 440 },
+  { xPct: 64, h: 250, stagger:  30 },
+  { xPct: 19, h: 215, stagger: 350 },
+  { xPct: 81, h: 239, stagger: 185 },
 ];
 
 // ── Depth layer per slot (1 = back/small, 4 = front/large) ───────────────────
@@ -100,7 +100,7 @@ interface FlowerDef {
 const FLOWERS: FlowerDef[] = [
   // ── 0  Poppy — 6 wide rounded petals, coral-red ──────────────────────────
   {
-    bloomTop: 102,
+    bloomTop: 65,
     angles: [0, 60, 120, 180, 240, 300],
     petalW: 64, petalH: 106,
     petalBg:  'radial-gradient(ellipse at 50% 25%, #F4967A 0%, #E8543A 55%, rgba(184,52,26,0.05) 100%)',
@@ -115,7 +115,7 @@ const FLOWERS: FlowerDef[] = [
 
   // ── 1  Peony — 6 very soft blush petals, almost overlapping ──────────────
   {
-    bloomTop: 115,
+    bloomTop: 72,
     angles: [0, 60, 120, 180, 240, 300],
     petalW: 70, petalH: 98,
     petalBg:  'radial-gradient(ellipse at 50% 22%, #FFF0EE 0%, #FFD6D0 55%, rgba(255,170,160,0.05) 100%)',
@@ -130,7 +130,7 @@ const FLOWERS: FlowerDef[] = [
 
   // ── 2  Buttercup — 3 narrow pointed-tip petals, bright gold ──────────────
   {
-    bloomTop: 78,
+    bloomTop: 48,
     angles: [0, 120, 240],
     petalW: 40, petalH: 78,
     petalBg:  'radial-gradient(ellipse at 50% 18%, #FFE866 0%, #FFD600 55%, rgba(210,170,0,0.05) 100%)',
@@ -145,7 +145,7 @@ const FLOWERS: FlowerDef[] = [
 
   // ── 3  Iris — 2 elongated slightly-wavy petals, soft violet ──────────────
   {
-    bloomTop: 98,
+    bloomTop: 60,
     angles: [0, 180],
     petalW: 50, petalH: 92,
     petalBg:  'radial-gradient(ellipse at 50% 22%, #DDB6FF 0%, #C084FC 55%, rgba(150,60,240,0.05) 100%)',
@@ -160,7 +160,7 @@ const FLOWERS: FlowerDef[] = [
 
   // ── 4  Wild Rose — 5 petals, organically uneven sizes, hot pink ──────────
   {
-    bloomTop: 96,
+    bloomTop: 62,
     angles: [0, 72, 144, 216, 288],
     petalW: [60, 52, 57, 48, 55],
     petalH: [90, 85, 95, 86, 92],
