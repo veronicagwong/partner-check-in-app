@@ -1,27 +1,29 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 // ── Slot layout — 30 positions, organically scattered ────────────────────────
+// xPct clamped to [15, 85] — matching the grass left/right margins so edges stay flower-free.
+// Order is shuffled each smile session; these are the positional pool, not a fixed sequence.
 const SLOTS = [
   { xPct: 38, h: 158, stagger:   0 },
   { xPct: 61, h: 144, stagger:  80 },
   { xPct: 18, h: 171, stagger: 200 },
   { xPct: 82, h: 139, stagger: 130 },
-  { xPct:  7, h: 152, stagger: 310 },
+  { xPct: 16, h: 152, stagger: 310 },  // was 7  — clamped to margin
   { xPct: 54, h: 165, stagger:  50 },
   { xPct: 73, h: 148, stagger: 240 },
   { xPct: 29, h: 136, stagger: 170 },
   { xPct: 57, h: 178, stagger:  20 },
   { xPct: 44, h: 141, stagger: 360 },
-  { xPct: 12, h: 162, stagger: 110 },
-  { xPct: 91, h: 155, stagger: 290 },
+  { xPct: 22, h: 162, stagger: 110 },  // was 12  — clamped
+  { xPct: 83, h: 155, stagger: 290 },  // was 91  — clamped
   { xPct: 67, h: 133, stagger:  70 },
   { xPct: 23, h: 169, stagger: 420 },
   { xPct: 48, h: 145, stagger: 150 },
   { xPct: 79, h: 175, stagger: 230 },
   { xPct: 35, h: 138, stagger: 330 },
   { xPct: 59, h: 152, stagger:  40 },
-  { xPct:  4, h: 143, stagger: 190 },
-  { xPct: 86, h: 161, stagger: 270 },
+  { xPct: 17, h: 143, stagger: 190 },  // was 4   — clamped
+  { xPct: 84, h: 161, stagger: 270 },  // was 86  — clamped
   { xPct: 26, h: 174, stagger:  95 },
   { xPct: 70, h: 137, stagger: 380 },
   { xPct: 42, h: 156, stagger: 210 },
@@ -30,8 +32,8 @@ const SLOTS = [
   { xPct: 76, h: 142, stagger: 140 },
   { xPct: 32, h: 153, stagger: 440 },
   { xPct: 64, h: 170, stagger:  30 },
-  { xPct:  9, h: 135, stagger: 350 },
-  { xPct: 94, h: 159, stagger: 185 },
+  { xPct: 19, h: 135, stagger: 350 },  // was 9   — clamped
+  { xPct: 81, h: 159, stagger: 185 },  // was 94  — clamped
 ];
 
 // ── Depth layer per slot (1 = back/small, 4 = front/large) ───────────────────
@@ -65,6 +67,18 @@ const SLOT_KINDS = [
 ];
 
 const W = 68; // slot container width (px)
+
+// ── Shuffle utility ───────────────────────────────────────────────────────────
+const SLOT_INDICES = Array.from({ length: SLOTS.length }, (_, i) => i);
+
+function shuffled(arr: number[]): number[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 
 // ── Flower data ───────────────────────────────────────────────────────────────
 // bloomTop: distance from slot top where the flower centre sits (= stem top)
@@ -305,11 +319,23 @@ function Flower({ visible, h, stagger, xPct, kind, scale }: {
 }
 
 // ── Layer ─────────────────────────────────────────────────────────────────────
-// Four depth containers at the same zIndex as the GrassLayer depth planes
-// (back=1, mid-back=2, front=3, near-front=4) and the same bottom anchor.
-// No zIndex on the outer wrapper so it doesn't create an isolating stacking
-// context — children's zIndexes participate in the drawer's stacking context.
+// Four depth containers matching GrassLayer's zIndex planes (back=1…near-front=4).
+// Slot order is shuffled on every new smile session so the first flower (and all
+// subsequent ones) are a fresh random pick from the full slot pool each time.
 export function TulipLayer({ count }: { count: number }) {
+  // Shuffled slot indices — determines which slot appears as the 1st, 2nd, 3rd… flower
+  const [order, setOrder] = useState<number[]>(() => shuffled(SLOT_INDICES));
+  const prevCount         = useRef(0);
+
+  useEffect(() => {
+    // When a smile session ends (count → 0), prepare a fresh random order
+    // so the very next smile starts with a different first flower.
+    if (count === 0 && prevCount.current > 0) {
+      setOrder(shuffled(SLOT_INDICES));
+    }
+    prevCount.current = count;
+  }, [count]);
+
   const depths = [1, 2, 3, 4] as const;
 
   return (
@@ -317,27 +343,29 @@ export function TulipLayer({ count }: { count: number }) {
       {depths.map(d => (
         <div key={d} style={{
           position:      'absolute',
-          bottom:        '28%',   // same ground plane as GrassLayer
+          bottom:        '28%',
           left:          0,
           right:         0,
           height:        0,
           overflow:      'visible',
           pointerEvents: 'none',
-          zIndex:        d,       // matches GrassLayer depth zIndexes
+          zIndex:        d,
         }}>
-          {SLOTS.map((s, i) =>
-            SLOT_DEPTHS[i] === d && (
+          {order.map((slotIdx, displayPos) => {
+            if (SLOT_DEPTHS[slotIdx] !== d) return null;
+            const s = SLOTS[slotIdx];
+            return (
               <Flower
-                key={i}
-                visible={i < count}
+                key={displayPos}
+                visible={displayPos < count}
                 h={s.h}
                 stagger={s.stagger}
                 xPct={s.xPct}
-                kind={SLOT_KINDS[i]}
+                kind={SLOT_KINDS[slotIdx]}
                 scale={SCALE_BY_DEPTH[d]}
               />
-            )
-          )}
+            );
+          })}
         </div>
       ))}
     </>
