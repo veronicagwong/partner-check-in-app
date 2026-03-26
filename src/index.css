@@ -130,6 +130,18 @@ body.drawer-open {
   to   { transform: scale(1); opacity: 1; }
 }
 
+/* Aura / center: scale up from a soft blur, full opacity */
+@keyframes aura-bloom {
+  from { transform: scale(0.35); opacity: 0; }
+  to   { transform: scale(1);    opacity: 1; }
+}
+
+/* Individual petals: scale from base outward, settle at 0.85 opacity */
+@keyframes petal-bloom {
+  from { transform: scale(0); opacity: 0;    }
+  to   { transform: scale(1); opacity: 0.85; }
+}
+
 /* ── Grass blade animations ───────────────────────────────────────────────── */
 
 @keyframes blade-grow {
