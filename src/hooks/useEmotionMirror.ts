@@ -56,10 +56,10 @@ function classifyEmotion(
   const mouthPucker = get('mouthPucker');
 
   const frownScore = Math.max(
-    // Path A — pout combo
-    (mouthFrown > 0.15 && mouthPucker > 0.08) ? (mouthFrown + mouthPucker) / 2 : 0,
-    // Path B — extreme frown, no pucker required
-    mouthFrown > 0.38 ? mouthFrown : 0,
+    // Path A — pout combo (corners down + lips out)
+    mouthFrown > 0.12 ? (mouthFrown + mouthPucker) / 2 : 0,
+    // Path B — frown alone; any deliberate corner droop counts directly
+    mouthFrown,
   );
 
   // ── Classify ───────────────────────────────────────────────────────────────
