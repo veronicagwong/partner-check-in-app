@@ -34,7 +34,27 @@ const SLOTS = [
   { xPct: 94, h: 159, stagger: 185 },
 ];
 
-// 5 types distributed organically across 30 slots (6 of each)
+// ── Depth layer per slot (1 = back/small, 4 = front/large) ───────────────────
+// 7×depth-1, 8×depth-2, 8×depth-3, 7×depth-4 — evenly distributed
+// Matched to zIndex layers in GrassLayer (back=1 … near-front=4)
+const SLOT_DEPTHS: (1 | 2 | 3 | 4)[] = [
+  3, 2, 4, 1, 2,   // slots  0–4
+  3, 4, 1, 2, 3,   // slots  5–9
+  1, 4, 2, 3, 1,   // slots 10–14
+  2, 4, 1, 3, 2,   // slots 15–19
+  4, 1, 3, 2, 4,   // slots 20–24
+  1, 3, 2, 4, 3,   // slots 25–29
+];
+
+// Visual scale by depth — deeper = smaller, like natural perspective
+const SCALE_BY_DEPTH: Record<1 | 2 | 3 | 4, number> = {
+  1: 0.42,
+  2: 0.62,
+  3: 0.80,
+  4: 1.00,
+};
+
+// 5 flower types distributed organically (6 of each, never same kind twice in a row)
 const SLOT_KINDS = [
   0, 2, 1, 4, 3,
   2, 0, 4, 1, 3,
@@ -48,8 +68,6 @@ const W = 68; // slot container width (px)
 
 // ── Flower data ───────────────────────────────────────────────────────────────
 // bloomTop: distance from slot top where the flower centre sits (= stem top)
-// petalW / petalH: per-petal arrays (for Wild Rose) or single number for uniform
-
 interface FlowerDef {
   bloomTop:          number;
   angles:            number[];
@@ -144,27 +162,21 @@ const FLOWERS: FlowerDef[] = [
 ];
 
 // ── FlowerBloom ───────────────────────────────────────────────────────────────
-// All-div, no SVG. Petals are ellipse divs rotated around the flower centre.
 function FlowerBloom({ h, baseDelay, kind }: {
   h: number; baseDelay: number; kind: number;
 }) {
   const def = FLOWERS[kind];
+  const pw  = (i: number) => Array.isArray(def.petalW) ? def.petalW[i] : def.petalW;
+  const ph  = (i: number) => Array.isArray(def.petalH) ? def.petalH[i] : def.petalH;
 
-  // Helper: get per-petal w / h (uniform or varying)
-  const pw = (i: number) => Array.isArray(def.petalW) ? def.petalW[i] : def.petalW;
-  const ph = (i: number) => Array.isArray(def.petalH) ? def.petalH[i] : def.petalH;
-
-  // Timing
-  // Aura fades in first (0 → 0.6s), petals stagger in starting at 0.3s,
-  // centre appears last. Total ≈ 2.5s.
-  const auraDelay   = baseDelay;
-  const petalStart  = baseDelay + 0.3;  // petals begin while aura is still opening
+  const auraDelay  = baseDelay;
+  const petalStart = baseDelay + 0.3;
   const centerDelay = baseDelay + 0.6;
 
   return (
     <div style={{ position: 'relative', width: W, height: h }}>
 
-      {/* ── Stem — very faint, 1px, grows upward from ground ── */}
+      {/* Stem — very faint, 1px, grows upward from ground */}
       <div style={{
         position:        'absolute',
         left:            W / 2,
@@ -176,7 +188,7 @@ function FlowerBloom({ h, baseDelay, kind }: {
         animation:       `tulip-stem-grow 0.4s ease-out ${baseDelay}s both`,
       }} />
 
-      {/* ── Flower head — mix-blend-mode: screen for the glow effect ── */}
+      {/* Flower head — mix-blend-mode: screen for the glow effect */}
       <div style={{
         position:      'absolute',
         inset:         0,
@@ -184,7 +196,7 @@ function FlowerBloom({ h, baseDelay, kind }: {
         pointerEvents: 'none',
       }}>
 
-        {/* Aura — large, heavily blurred, fades in first */}
+        {/* Aura — large, heavily blurred halo, appears first */}
         <div style={{
           position:     'absolute',
           left:         W / 2 - def.auraSize / 2,
@@ -197,33 +209,27 @@ function FlowerBloom({ h, baseDelay, kind }: {
           animation:    `aura-bloom 0.6s ease-out ${auraDelay}s both`,
         }} />
 
-        {/* Petals — each is a rotation wrapper (zero-size anchor at flower centre)
-            + inner ellipse div that scales from its base outward              */}
+        {/* Petals — rotation wrapper (zero-size anchor) + inner ellipse */}
         {def.angles.map((angle, i) => {
           const w = pw(i), hh = ph(i);
           return (
-            <div
-              key={i}
-              style={{
-                position: 'absolute',
-                left:     W / 2,
-                top:      def.bloomTop,
-                width:    0,
-                height:   0,
-                // rotate around the flower centre
-                transform: `rotate(${angle}deg)`,
-              }}
-            >
+            <div key={i} style={{
+              position:  'absolute',
+              left:      W / 2,
+              top:       def.bloomTop,
+              width:     0,
+              height:    0,
+              transform: `rotate(${angle}deg)`,
+            }}>
               <div style={{
                 position:        'absolute',
                 left:            -w / 2,
-                top:             -hh,      // petal extends upward; base is at (0,0) = centre
+                top:             -hh,
                 width:           w,
                 height:          hh,
                 borderRadius:    def.petalBorderRadius,
                 background:      def.petalBg,
                 filter:          `blur(${def.petalBlur}px)`,
-                // scale from petal base (bottom-centre = flower centre)
                 transformOrigin: '50% 100%',
                 animation:       `petal-bloom 1.8s ease-out ${petalStart + i * 0.05}s both`,
               }} />
@@ -231,7 +237,7 @@ function FlowerBloom({ h, baseDelay, kind }: {
           );
         })}
 
-        {/* Centre — warm white/yellow, appears after petals begin */}
+        {/* Centre */}
         <div style={{
           position:     'absolute',
           left:         W / 2 - def.centerSize / 2,
@@ -250,8 +256,9 @@ function FlowerBloom({ h, baseDelay, kind }: {
 }
 
 // ── Single slot with show / hide logic ───────────────────────────────────────
-function Flower({ visible, h, stagger, xPct, kind }: {
-  visible: boolean; h: number; stagger: number; xPct: number; kind: number;
+function Flower({ visible, h, stagger, xPct, kind, scale }: {
+  visible: boolean; h: number; stagger: number;
+  xPct: number; kind: number; scale: number;
 }) {
   const [gen, setGen]   = useState(0);
   const prevVisible     = useRef(false);
@@ -284,34 +291,55 @@ function Flower({ visible, h, stagger, xPct, kind }: {
       transition:    visible ? 'none' : 'opacity 0.8s ease',
       pointerEvents: 'none',
     }}>
-      {gen > 0 && <FlowerBloom key={gen} h={h} baseDelay={0} kind={kind} />}
+      {/* Scale wrapper: keeps base anchored to ground, shrinks toward back */}
+      <div style={{
+        width:           W,
+        height:          h,
+        transformOrigin: 'bottom center',
+        transform:       `scale(${scale})`,
+      }}>
+        {gen > 0 && <FlowerBloom key={gen} h={h} baseDelay={0} kind={kind} />}
+      </div>
     </div>
   );
 }
 
 // ── Layer ─────────────────────────────────────────────────────────────────────
+// Four depth containers at the same zIndex as the GrassLayer depth planes
+// (back=1, mid-back=2, front=3, near-front=4) and the same bottom anchor.
+// No zIndex on the outer wrapper so it doesn't create an isolating stacking
+// context — children's zIndexes participate in the drawer's stacking context.
 export function TulipLayer({ count }: { count: number }) {
+  const depths = [1, 2, 3, 4] as const;
+
   return (
-    <div style={{
-      position:      'absolute',
-      bottom:        '20%',
-      left:          0,
-      right:         0,
-      height:        0,
-      overflow:      'visible',
-      pointerEvents: 'none',
-      zIndex:        5,
-    }}>
-      {SLOTS.map((s, i) => (
-        <Flower
-          key={i}
-          visible={i < count}
-          h={s.h}
-          stagger={s.stagger}
-          xPct={s.xPct}
-          kind={SLOT_KINDS[i]}
-        />
+    <>
+      {depths.map(d => (
+        <div key={d} style={{
+          position:      'absolute',
+          bottom:        '28%',   // same ground plane as GrassLayer
+          left:          0,
+          right:         0,
+          height:        0,
+          overflow:      'visible',
+          pointerEvents: 'none',
+          zIndex:        d,       // matches GrassLayer depth zIndexes
+        }}>
+          {SLOTS.map((s, i) =>
+            SLOT_DEPTHS[i] === d && (
+              <Flower
+                key={i}
+                visible={i < count}
+                h={s.h}
+                stagger={s.stagger}
+                xPct={s.xPct}
+                kind={SLOT_KINDS[i]}
+                scale={SCALE_BY_DEPTH[d]}
+              />
+            )
+          )}
+        </div>
       ))}
-    </div>
+    </>
   );
 }
