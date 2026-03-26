@@ -4,36 +4,36 @@ import React, { useEffect, useRef, useState } from 'react';
 // xPct clamped to [15, 85] — matching the grass left/right margins so edges stay flower-free.
 // Order is shuffled each smile session; these are the positional pool, not a fixed sequence.
 const SLOTS = [
-  { xPct: 38, h: 118, stagger:   0 },
-  { xPct: 61, h: 104, stagger:  80 },
-  { xPct: 18, h: 132, stagger: 200 },
-  { xPct: 82, h: 100, stagger: 130 },
-  { xPct: 16, h: 112, stagger: 310 },
-  { xPct: 54, h: 125, stagger:  50 },
-  { xPct: 73, h: 108, stagger: 240 },
-  { xPct: 29, h:  96, stagger: 170 },
-  { xPct: 57, h: 138, stagger:  20 },
-  { xPct: 44, h: 102, stagger: 360 },
-  { xPct: 22, h: 122, stagger: 110 },
-  { xPct: 83, h: 115, stagger: 290 },
-  { xPct: 67, h:  93, stagger:  70 },
-  { xPct: 23, h: 129, stagger: 420 },
-  { xPct: 48, h: 105, stagger: 150 },
-  { xPct: 79, h: 135, stagger: 230 },
-  { xPct: 35, h:  98, stagger: 330 },
-  { xPct: 59, h: 112, stagger:  40 },
-  { xPct: 17, h: 103, stagger: 190 },
-  { xPct: 84, h: 121, stagger: 270 },
-  { xPct: 26, h: 134, stagger:  95 },
-  { xPct: 70, h:  97, stagger: 380 },
-  { xPct: 45, h: 175, stagger: 210 },  // central tall depth-4 — reaches into face area
-  { xPct: 52, h: 107, stagger:  60 },
-  { xPct: 15, h: 126, stagger: 300 },
-  { xPct: 76, h: 102, stagger: 140 },
-  { xPct: 32, h: 113, stagger: 440 },
-  { xPct: 64, h: 130, stagger:  30 },
-  { xPct: 19, h:  95, stagger: 350 },
-  { xPct: 81, h: 119, stagger: 185 },
+  { xPct: 38, h: 238, stagger:   0 },
+  { xPct: 61, h: 224, stagger:  80 },
+  { xPct: 18, h: 252, stagger: 200 },
+  { xPct: 82, h: 220, stagger: 130 },
+  { xPct: 16, h: 232, stagger: 310 },
+  { xPct: 54, h: 245, stagger:  50 },
+  { xPct: 73, h: 228, stagger: 240 },
+  { xPct: 29, h: 216, stagger: 170 },
+  { xPct: 57, h: 258, stagger:  20 },
+  { xPct: 44, h: 222, stagger: 360 },
+  { xPct: 22, h: 242, stagger: 110 },
+  { xPct: 83, h: 235, stagger: 290 },
+  { xPct: 67, h: 213, stagger:  70 },
+  { xPct: 23, h: 249, stagger: 420 },
+  { xPct: 48, h: 225, stagger: 150 },
+  { xPct: 79, h: 255, stagger: 230 },
+  { xPct: 35, h: 218, stagger: 330 },
+  { xPct: 59, h: 232, stagger:  40 },
+  { xPct: 17, h: 223, stagger: 190 },
+  { xPct: 84, h: 241, stagger: 270 },
+  { xPct: 26, h: 254, stagger:  95 },
+  { xPct: 70, h: 217, stagger: 380 },
+  { xPct: 45, h: 295, stagger: 210 },  // central tall depth-4 — reaches into face area
+  { xPct: 52, h: 227, stagger:  60 },
+  { xPct: 15, h: 246, stagger: 300 },
+  { xPct: 76, h: 222, stagger: 140 },
+  { xPct: 32, h: 233, stagger: 440 },
+  { xPct: 64, h: 250, stagger:  30 },
+  { xPct: 19, h: 215, stagger: 350 },
+  { xPct: 81, h: 239, stagger: 185 },
 ];
 
 // ── Depth layer per slot (1 = back/small, 4 = front/large) ───────────────────
@@ -81,99 +81,97 @@ function shuffled(arr: number[]): number[] {
 }
 
 // ── Flower data ───────────────────────────────────────────────────────────────
-// bloomTop: px from slot top where flower centre sits (= top of stem).
-// Petal gradient always uses a white specular highlight at 40% 40% so each
-// petal looks dimensional — like watercolour with light catching the surface.
-// Aura is screen-blended and kept subtle (blur 20px, opacity 0.25).
-// Size variety is critical: 5 types span tiny (28px) → very large (165px).
+// bloomTop: distance from slot top where the flower centre sits (= stem top)
 interface FlowerDef {
-  bloomTop:     number;
-  angles:       number[];
-  petalW:       number;     // uniform across all petals of this type
-  petalH:       number;
-  petalColor:   string;     // main petal hue; white highlight is added automatically
-  petalOpacity: number;     // 0.75 – 0.90
-  auraSize:     number;
-  auraColor:    string;     // rgba(...) used in radial-gradient
-  centerSize:   number;
-  centerColor:  string;
-  centerDot:    string;     // tiny sharp inner dot
+  bloomTop:          number;
+  angles:            number[];
+  petalW:            number | number[];
+  petalH:            number | number[];
+  petalBg:           string;
+  petalBlur:         number;
+  petalBorderRadius: string;
+  auraSize:          number;
+  auraBg:            string;
+  auraBlur:          number;
+  centerSize:        number;
+  centerBg:          string;
 }
 
 const FLOWERS: FlowerDef[] = [
-  // ── 0  Large Poppy — very large, coral-red, 5 petals ─────────────────────
-  // diameter at depth-4 scale: ~164px  (petalH × 2)
+  // ── 0  Poppy — 6 wide rounded petals, coral-red ──────────────────────────
   {
-    bloomTop: 55,
-    angles: [0, 72, 144, 216, 288],
-    petalW: 56, petalH: 82,
-    petalColor:   '#E85D4A',
-    petalOpacity: 0.82,
-    auraSize: 210,
-    auraColor:    'rgba(232,93,74,0.25)',
-    centerSize: 18,
-    centerColor:  '#F5C800',
-    centerDot:    '#C88000',
-  },
-
-  // ── 1  Medium Peony — blush pink, 6 petals ────────────────────────────────
-  // diameter at depth-4 scale: ~100px
-  {
-    bloomTop: 55,
+    bloomTop: 65,
     angles: [0, 60, 120, 180, 240, 300],
-    petalW: 36, petalH: 50,
-    petalColor:   '#FFB0C0',
-    petalOpacity: 0.78,
-    auraSize: 148,
-    auraColor:    'rgba(255,160,185,0.22)',
-    centerSize: 14,
-    centerColor:  '#FFF0D0',
-    centerDot:    '#FFD080',
+    petalW: 64, petalH: 106,
+    petalBg:  'radial-gradient(ellipse at 50% 25%, #F4967A 0%, #E8543A 55%, rgba(184,52,26,0.05) 100%)',
+    petalBlur: 11,
+    petalBorderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%',
+    auraSize: 310,
+    auraBg:   'radial-gradient(circle, rgba(232,84,58,0.50) 0%, transparent 70%)',
+    auraBlur: 52,
+    centerSize: 32,
+    centerBg: 'radial-gradient(circle, #FFE040 0%, #FF8800 70%)',
   },
 
-  // ── 2  Small Magenta — hot pink, 5 petals ────────────────────────────────
-  // diameter at depth-4 scale: ~56px
+  // ── 1  Peony — 6 very soft blush petals, almost overlapping ──────────────
   {
-    bloomTop: 55,
-    angles: [0, 72, 144, 216, 288],
-    petalW: 20, petalH: 28,
-    petalColor:   '#FF3D8A',
-    petalOpacity: 0.86,
-    auraSize: 96,
-    auraColor:    'rgba(255,61,138,0.22)',
-    centerSize: 10,
-    centerColor:  '#FFFFFF',
-    centerDot:    '#FFD0E8',
-  },
-
-  // ── 3  Medium Orange Cosmos — warm orange, 8 narrow petals ───────────────
-  // diameter at depth-4 scale: ~96px
-  {
-    bloomTop: 55,
-    angles: [0, 45, 90, 135, 180, 225, 270, 315],
-    petalW: 20, petalH: 48,
-    petalColor:   '#FF8C42',
-    petalOpacity: 0.80,
-    auraSize: 145,
-    auraColor:    'rgba(255,140,66,0.22)',
-    centerSize: 13,
-    centerColor:  '#F5C800',
-    centerDot:    '#C88000',
-  },
-
-  // ── 4  Tiny Lilac accent — pale violet, 6 very small petals ──────────────
-  // diameter at depth-4 scale: ~30px
-  {
-    bloomTop: 55,
+    bloomTop: 72,
     angles: [0, 60, 120, 180, 240, 300],
-    petalW: 10, petalH: 15,
-    petalColor:   '#C9A6E8',
-    petalOpacity: 0.88,
-    auraSize: 60,
-    auraColor:    'rgba(201,166,232,0.22)',
-    centerSize: 7,
-    centerColor:  '#FFFFFF',
-    centerDot:    '#E8D8FF',
+    petalW: 70, petalH: 98,
+    petalBg:  'radial-gradient(ellipse at 50% 22%, #FFF0EE 0%, #FFD6D0 55%, rgba(255,170,160,0.05) 100%)',
+    petalBlur: 14,
+    petalBorderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%',
+    auraSize: 330,
+    auraBg:   'radial-gradient(circle, rgba(255,180,170,0.42) 0%, transparent 70%)',
+    auraBlur: 58,
+    centerSize: 36,
+    centerBg: 'radial-gradient(circle, #FFF8F5 0%, #FFE0D8 65%)',
+  },
+
+  // ── 2  Buttercup — 3 narrow pointed-tip petals, bright gold ──────────────
+  {
+    bloomTop: 48,
+    angles: [0, 120, 240],
+    petalW: 40, petalH: 78,
+    petalBg:  'radial-gradient(ellipse at 50% 18%, #FFE866 0%, #FFD600 55%, rgba(210,170,0,0.05) 100%)',
+    petalBlur: 8,
+    petalBorderRadius: '40% 40% 50% 50% / 70% 70% 30% 30%',
+    auraSize: 205,
+    auraBg:   'radial-gradient(circle, rgba(255,214,0,0.52) 0%, transparent 70%)',
+    auraBlur: 38,
+    centerSize: 28,
+    centerBg: 'radial-gradient(circle, #FFEE66 0%, #FFA500 70%)',
+  },
+
+  // ── 3  Iris — 2 elongated slightly-wavy petals, soft violet ──────────────
+  {
+    bloomTop: 60,
+    angles: [0, 180],
+    petalW: 50, petalH: 92,
+    petalBg:  'radial-gradient(ellipse at 50% 22%, #DDB6FF 0%, #C084FC 55%, rgba(150,60,240,0.05) 100%)',
+    petalBlur: 12,
+    petalBorderRadius: '60% 40% 60% 40% / 60% 60% 40% 40%',
+    auraSize: 248,
+    auraBg:   'radial-gradient(circle, rgba(192,132,252,0.38) 0%, transparent 70%)',
+    auraBlur: 45,
+    centerSize: 26,
+    centerBg: 'radial-gradient(circle, #FFF0FF 0%, #DDB6FF 60%)',
+  },
+
+  // ── 4  Wild Rose — 5 petals, organically uneven sizes, hot pink ──────────
+  {
+    bloomTop: 62,
+    angles: [0, 72, 144, 216, 288],
+    petalW: [60, 52, 57, 48, 55],
+    petalH: [90, 85, 95, 86, 92],
+    petalBg:  'radial-gradient(ellipse at 50% 25%, #FFB3D9 0%, #FF6EB4 55%, rgba(200,40,130,0.05) 100%)',
+    petalBlur: 11,
+    petalBorderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%',
+    auraSize: 262,
+    auraBg:   'radial-gradient(circle, rgba(255,110,180,0.43) 0%, transparent 70%)',
+    auraBlur: 50,
+    centerSize: 30,
+    centerBg: 'radial-gradient(circle, #FFF8F0 0%, #FFE080 65%)',
   },
 ];
 
@@ -182,99 +180,91 @@ function FlowerBloom({ h, baseDelay, kind }: {
   h: number; baseDelay: number; kind: number;
 }) {
   const def = FLOWERS[kind];
+  const pw  = (i: number) => Array.isArray(def.petalW) ? def.petalW[i] : def.petalW;
+  const ph  = (i: number) => Array.isArray(def.petalH) ? def.petalH[i] : def.petalH;
 
-  const auraDelay   = baseDelay;
-  const petalStart  = baseDelay + 0.25;
-  const centerDelay = baseDelay + 0.55;
-
-  // Petal gradient: white specular highlight at upper-left → petal colour → transparent
-  const petalGrad = `radial-gradient(ellipse at 40% 40%, rgba(255,255,255,0.92) 0%, ${def.petalColor} 40%, transparent 100%)`;
+  const auraDelay  = baseDelay;
+  const petalStart = baseDelay + 0.3;
+  const centerDelay = baseDelay + 0.6;
 
   return (
     <div style={{ position: 'relative', width: W, height: h }}>
 
-      {/* Stem — slightly curved look via 1.5px rgba green */}
+      {/* Stem — very faint, 1px, grows upward from ground */}
       <div style={{
         position:        'absolute',
         left:            W / 2,
         top:             def.bloomTop,
-        width:           1.5,
+        width:           1,
         height:          h - def.bloomTop,
-        background:      'rgba(80,130,70,0.6)',
-        borderRadius:    1,
+        background:      'rgba(100,140,80,0.4)',
         transformOrigin: 'bottom center',
         animation:       `tulip-stem-grow 0.4s ease-out ${baseDelay}s both`,
       }} />
 
-      {/* Aura — screen-blended, light and subtle behind petals */}
+      {/* Flower head — mix-blend-mode: screen for the glow effect */}
       <div style={{
-        position:     'absolute',
-        left:         W / 2 - def.auraSize / 2,
-        top:          def.bloomTop - def.auraSize / 2,
-        width:        def.auraSize,
-        height:       def.auraSize,
-        borderRadius: '50%',
-        background:   `radial-gradient(circle, ${def.auraColor} 0%, transparent 70%)`,
-        filter:       'blur(20px)',
-        mixBlendMode: 'screen' as React.CSSProperties['mixBlendMode'],
-        animation:    `aura-bloom 0.5s ease-out ${auraDelay}s both`,
-      }} />
+        position:      'absolute',
+        inset:         0,
+        mixBlendMode:  'screen' as React.CSSProperties['mixBlendMode'],
+        pointerEvents: 'none',
+      }}>
 
-      {/* Petals — individually visible, soft edges, watercolour highlight */}
-      {def.angles.map((angle, i) => (
-        <div
-          key={i}
-          style={{
-            position:  'absolute',
-            left:      W / 2,
-            top:       def.bloomTop,
-            width:     0,
-            height:    0,
-            transform: `rotate(${angle}deg)`,
-            // opacity on the rotation wrapper so it doesn't compound with animation
-            opacity:   def.petalOpacity,
-          }}
-        >
-          <div style={{
-            position:        'absolute',
-            left:            -def.petalW / 2,
-            top:             -def.petalH,
-            width:           def.petalW,
-            height:          def.petalH,
-            borderRadius:    '50% 50% 50% 50% / 70% 70% 30% 30%',
-            background:      petalGrad,
-            filter:          'blur(3px)',
-            transformOrigin: '50% 100%',
-            animation:       `petal-bloom 1.6s ease-out ${petalStart + i * 0.05}s both`,
-          }} />
-        </div>
-      ))}
+        {/* Aura — large, heavily blurred halo, appears first */}
+        <div style={{
+          position:     'absolute',
+          left:         W / 2 - def.auraSize / 2,
+          top:          def.bloomTop - def.auraSize / 2,
+          width:        def.auraSize,
+          height:       def.auraSize,
+          borderRadius: '50%',
+          background:   def.auraBg,
+          filter:       `blur(${def.auraBlur}px)`,
+          animation:    `aura-bloom 0.6s ease-out ${auraDelay}s both`,
+        }} />
 
-      {/* Centre — contrasting colour, stays relatively sharp */}
-      <div style={{
-        position:     'absolute',
-        left:         W / 2 - def.centerSize / 2,
-        top:          def.bloomTop - def.centerSize / 2,
-        width:        def.centerSize,
-        height:       def.centerSize,
-        borderRadius: '50%',
-        background:   `radial-gradient(circle, white 0%, ${def.centerColor} 65%)`,
-        filter:       'blur(1px)',
-        animation:    `aura-bloom 0.35s ease-out ${centerDelay}s both`,
-      }} />
+        {/* Petals — rotation wrapper (zero-size anchor) + inner ellipse */}
+        {def.angles.map((angle, i) => {
+          const w = pw(i), hh = ph(i);
+          return (
+            <div key={i} style={{
+              position:  'absolute',
+              left:      W / 2,
+              top:       def.bloomTop,
+              width:     0,
+              height:    0,
+              transform: `rotate(${angle}deg)`,
+            }}>
+              <div style={{
+                position:        'absolute',
+                left:            -w / 2,
+                top:             -hh,
+                width:           w,
+                height:          hh,
+                borderRadius:    def.petalBorderRadius,
+                background:      def.petalBg,
+                filter:          `blur(${def.petalBlur}px)`,
+                transformOrigin: '50% 100%',
+                animation:       `petal-bloom 1.8s ease-out ${petalStart + i * 0.05}s both`,
+              }} />
+            </div>
+          );
+        })}
 
-      {/* Inner accent dot — sharp detail inside centre */}
-      <div style={{
-        position:     'absolute',
-        left:         W / 2 - def.centerSize * 0.22,
-        top:          def.bloomTop - def.centerSize * 0.22,
-        width:        def.centerSize * 0.44,
-        height:       def.centerSize * 0.44,
-        borderRadius: '50%',
-        background:   def.centerDot,
-        animation:    `aura-bloom 0.25s ease-out ${centerDelay + 0.1}s both`,
-      }} />
+        {/* Centre */}
+        <div style={{
+          position:     'absolute',
+          left:         W / 2 - def.centerSize / 2,
+          top:          def.bloomTop - def.centerSize / 2,
+          width:        def.centerSize,
+          height:       def.centerSize,
+          borderRadius: '50%',
+          background:   def.centerBg,
+          filter:       'blur(4px)',
+          animation:    `aura-bloom 0.4s ease-out ${centerDelay}s both`,
+        }} />
 
+      </div>
     </div>
   );
 }
