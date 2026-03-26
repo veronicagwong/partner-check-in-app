@@ -12,18 +12,18 @@ interface Props {
 
 // ── Color field logic ─────────────────────────────────────────────────────────
 //
-//  Faces    │ Emotions            │ Background
-//  ─────────┼─────────────────────┼───────────
-//  0        │ —                   │ #ECECEA  (idle grey)
-//  1        │ happy               │ #FFF6B1  (soft yellow)
-//  1        │ sad                 │ #C1EDFF  (light blue)
-//  1        │ neutral             │ #EFEFED  (neutral grey)
-//  2        │ happy + happy       │ #FFD600  (bright yellow)
-//  2        │ sad   + sad         │ #0D2B6B  (deep blue)
-//  2        │ happy + sad         │ #9E9E9E  (grey)
-//  2        │ sad   + neutral     │ #C1EDFF  (light blue)
-//  2        │ happy + neutral     │ #FFF6B1  (soft yellow)
-//  2        │ neutral + neutral   │ #EFEFED  (neutral grey)
+//  Faces    │ Emotions            │ Gradient (bottom → top)
+//  ─────────┼─────────────────────┼──────────────────────────────────────────
+//  0        │ —                   │ #b0b0b0 → #f0f0f0  (neutral grey)
+//  1        │ happy               │ #f5d76e → #fffde7  (pale yellow)
+//  1        │ sad                 │ #90bcd4 → #e3f2fd  (pale blue)
+//  1        │ neutral             │ #b0b0b0 → #f0f0f0
+//  2        │ happy + happy       │ #f0b800 → #FFD600  (bright yellow)
+//  2        │ sad   + sad         │ #06194a → #0D2B6B  (dark blue)
+//  2        │ happy + sad         │ #616161 → #9E9E9E  (grey)
+//  2        │ sad   + neutral     │ #90bcd4 → #e3f2fd
+//  2        │ happy + neutral     │ #f5d76e → #fffde7
+//  2        │ neutral + neutral   │ #b0b0b0 → #f0f0f0
 //
 // ── Emotion thresholds ────────────────────────────────────────────────────────
 //
@@ -35,24 +35,41 @@ interface Props {
 //  sad B    │ mouthFrown alone (extreme frown, no pucker)│ > 0.38
 //  neutral  │ neither happy nor sad threshold met        │ —
 
+const GRAD = {
+  neutral:    '#ededeb',   // flat — no gradient for neutral, avoids gloomy grey ramp
+  happyOne:   'linear-gradient(to top, #f5d76e, #fffde7)',
+  sadOne:     'linear-gradient(to top, #90bcd4, #e3f2fd)',
+  happyBoth:  'linear-gradient(to top, #f0b800, #FFD600)',
+  sadBoth:    'linear-gradient(to top, #06194a, #0D2B6B)',
+  mixed:      'linear-gradient(to top, #616161, #9E9E9E)',
+};
+
 function resolveBackground(faces: FaceEmotion[]): string {
   const n = faces.length;
-  if (n === 0) return '#ECECEA';
+  if (n === 0) return GRAD.neutral;
   if (n === 1) {
-    if (faces[0].emotion === 'happy') return '#FFF6B1';
-    if (faces[0].emotion === 'sad')   return '#C1EDFF';
-    return '#EFEFED';
+    if (faces[0].emotion === 'happy') return GRAD.happyOne;
+    if (faces[0].emotion === 'sad')   return GRAD.sadOne;
+    return GRAD.neutral;
   }
-  const [a, b] = faces;
-  const emotions = [a.emotion, b.emotion].sort(); // sort for easy comparison
-
-  if (emotions[0] === 'happy' && emotions[1] === 'happy') return '#FFD600';
-  if (emotions[0] === 'sad'   && emotions[1] === 'sad')   return '#0D2B6B';
-  if (emotions.includes('happy') && emotions.includes('sad'))  return '#9E9E9E';
-  if (emotions.includes('sad'))   return '#C1EDFF'; // one sad, one neutral → blue
-  if (emotions.includes('happy')) return '#FFF6B1'; // one happy, one neutral → yellow
-  return '#EFEFED';
+  const emotions = [faces[0].emotion, faces[1].emotion].sort();
+  if (emotions[0] === 'happy' && emotions[1] === 'happy') return GRAD.happyBoth;
+  if (emotions[0] === 'sad'   && emotions[1] === 'sad')   return GRAD.sadBoth;
+  if (emotions.includes('happy') && emotions.includes('sad'))  return GRAD.mixed;
+  if (emotions.includes('sad'))   return GRAD.sadOne;
+  if (emotions.includes('happy')) return GRAD.happyOne;
+  return GRAD.neutral;
 }
+
+function resolveIsDark(faces: FaceEmotion[]): boolean {
+  if (faces.length < 2) return false;
+  const emotions = faces.map(f => f.emotion).sort();
+  return (emotions[0] === 'sad' && emotions[1] === 'sad') ||
+         (emotions.includes('happy') && emotions.includes('sad'));
+}
+
+// Grain overlay data URI — SVG feTurbulence fractal noise
+const GRAIN_URI = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.62' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23grain)'/%3E%3C/svg%3E")`;
 
 // ── Emotion-aware blob styling ────────────────────────────────────────────────
 
@@ -164,6 +181,13 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
   const [deviceId, setDeviceId]       = useState<string | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // ── Gradient crossfade — two layers swap opacity so gradients transition ──
+  const [gradA, setGradA]   = useState(() => resolveBackground([]));
+  const [gradB, setGradB]   = useState(() => resolveBackground([]));
+  const [aIsTop, setAIsTop] = useState(true);
+  const aIsTopRef           = useRef(true);
+  const prevGradRef         = useRef(resolveBackground([]));
+
   // ── Grass wilt state — driven by sustained sad detection ─────────────────
   const [wiltState, setWiltState]     = useState<WiltState>('idle');
   const wiltStateRef                  = useRef<WiltState>('idle');
@@ -257,14 +281,14 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
 
     if (anyHappy) {
       if (!smileIntervalRef.current) {
-        // Immediately show 2 tulips, then add one more every 2 s (max 8)
+        // Immediately show 2 dandelions, then add one more every 1.5 s (max 30)
         tulipCountRef.current = Math.max(tulipCountRef.current, 2);
         setTulipCount(tulipCountRef.current);
 
         smileIntervalRef.current = setInterval(() => {
-          tulipCountRef.current = Math.min(tulipCountRef.current + 1, 8);
+          tulipCountRef.current = Math.min(tulipCountRef.current + 1, 30);
           setTulipCount(tulipCountRef.current);
-        }, 2000);
+        }, 1500);
       }
     } else {
       if (smileIntervalRef.current) {
@@ -285,10 +309,25 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
     };
   }, []);
 
+  // ── Crossfade gradient when emotion state changes ─────────────────────────
+  useEffect(() => {
+    const newGrad = resolveBackground(faces);
+    if (newGrad === prevGradRef.current) return;
+    prevGradRef.current = newGrad;
+    if (aIsTopRef.current) {
+      setGradB(newGrad);
+      setAIsTop(false);
+      aIsTopRef.current = false;
+    } else {
+      setGradA(newGrad);
+      setAIsTop(true);
+      aIsTopRef.current = true;
+    }
+  }, [faces]);
+
   if (!mounted) return null;
 
-  const bg     = resolveBackground(faces);
-  const isDark = bg === '#0D2B6B' || bg === '#9E9E9E';
+  const isDark = resolveIsDark(faces);
 
   // Circle sizing: single face → larger, two faces → slightly smaller
   const circleSize = faces.length === 2
@@ -306,10 +345,38 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
         position: 'fixed',
         inset: 0,
         zIndex: 50,
-        background: bg,
-        transition: 'background 1.2s ease',
+        // Solid fallback — always opaque, prevents main page bleeding through
+        background: aIsTop ? gradA : gradB,
       }}
     >
+
+      {/* ── Background gradient layer A — crossfades on top of container bg ── */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: gradA,
+        opacity: aIsTop ? 1 : 0,
+        transition: 'opacity 1.2s ease',
+        pointerEvents: 'none',
+      }} />
+
+      {/* ── Background gradient layer B ── */}
+      <div style={{
+        position: 'absolute', inset: 0,
+        background: gradB,
+        opacity: aIsTop ? 0 : 1,
+        transition: 'opacity 1.2s ease',
+        pointerEvents: 'none',
+      }} />
+
+      {/* ── Grain overlay — fine art paper texture, larger tile ── */}
+      <div style={{
+        position: 'absolute', inset: 0, zIndex: 1,
+        backgroundImage: GRAIN_URI,
+        backgroundSize: '320px 320px',
+        opacity: 0.22,
+        mixBlendMode: 'overlay',
+        pointerEvents: 'none',
+      }} />
 
       {/* ── Close button ── */}
       <button

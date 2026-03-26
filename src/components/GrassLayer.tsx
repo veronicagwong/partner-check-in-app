@@ -58,9 +58,6 @@ const FRONT_BLADES: BladeConfig[] = [
   { xPct: 84,  h:  82, w: 10, lean:  0.15, swayDur: 3.1, swayAmp: 4, swayPhase: 0.30 },
 ];
 
-// ── Grain data URI (SVG feTurbulence noise) ───────────────────────────────────
-const GRAIN_URI = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.68' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23g)'/%3E%3C/svg%3E")`;
-
 // ── Blade ─────────────────────────────────────────────────────────────────────
 
 interface LayerStyle {
@@ -197,17 +194,6 @@ export function GrassLayer({ wiltState }: GrassLayerProps) {
         ))}
       </div>
 
-      {/* ── Grain overlay — painterly feTurbulence texture ── */}
-      <div style={{
-        position:       'absolute',
-        inset:          '-100vh -100vw',   // bleed beyond grass to cover full scene
-        backgroundImage: GRAIN_URI,
-        backgroundSize: '200px 200px',
-        opacity:        0.25,
-        mixBlendMode:   'overlay',
-        pointerEvents:  'none',
-        zIndex:         20,
-      }} />
     </>
   );
 }
