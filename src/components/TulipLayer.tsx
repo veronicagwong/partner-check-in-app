@@ -1,41 +1,47 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-// ── Slot layout — 30 positions spread across the full width ───────────────────
+// ── Slot layout — 30 positions, organically scattered ────────────────────────
+// Intentionally uneven: clusters in some zones, sparse gaps elsewhere.
+// Heights vary widely so tall and short plants mix naturally.
+// Stagger is non-sequential so nearby flowers don't pop up together.
 const SLOTS = [
-  // First wave (slots 0–7) — appears quickly
-  { xPct:  8, h: 145, stagger:   0 },
-  { xPct: 20, h: 162, stagger: 120 },
-  { xPct: 33, h: 155, stagger: 240 },
-  { xPct: 46, h: 170, stagger:  60 },
-  { xPct: 59, h: 148, stagger: 180 },
-  { xPct: 72, h: 165, stagger: 300 },
-  { xPct: 84, h: 140, stagger:  90 },
-  { xPct: 94, h: 158, stagger: 210 },
-  // Second wave (slots 8–15) — fills gaps
-  { xPct: 14, h: 138, stagger: 150 },
-  { xPct: 27, h: 172, stagger:  30 },
-  { xPct: 40, h: 143, stagger: 270 },
-  { xPct: 52, h: 168, stagger: 100 },
-  { xPct: 65, h: 155, stagger: 220 },
-  { xPct: 77, h: 147, stagger: 340 },
-  { xPct: 88, h: 175, stagger:  70 },
-  { xPct:  3, h: 135, stagger: 190 },
-  // Third wave (slots 16–22) — deeper fill
-  { xPct: 10, h: 160, stagger: 260 },
-  { xPct: 23, h: 145, stagger:  40 },
-  { xPct: 36, h: 178, stagger: 170 },
-  { xPct: 49, h: 137, stagger: 310 },
-  { xPct: 62, h: 163, stagger:  80 },
-  { xPct: 75, h: 152, stagger: 200 },
-  { xPct: 90, h: 142, stagger: 130 },
-  // Fourth wave (slots 23–29) — final density
-  { xPct: 17, h: 170, stagger: 350 },
-  { xPct: 30, h: 148, stagger:  50 },
-  { xPct: 43, h: 165, stagger: 280 },
-  { xPct: 56, h: 155, stagger: 160 },
-  { xPct: 69, h: 140, stagger: 400 },
-  { xPct: 81, h: 168, stagger:  20 },
-  { xPct: 96, h: 150, stagger: 320 },
+  // — first flowers to appear, seeding the scene —
+  { xPct: 38, h: 158, stagger:   0 },   // near centre, first
+  { xPct: 61, h: 144, stagger:  80 },   // right of centre
+  { xPct: 18, h: 171, stagger: 200 },   // left zone
+  { xPct: 82, h: 139, stagger: 130 },   // right zone
+  { xPct:  7, h: 152, stagger: 310 },   // far left, lone
+  { xPct: 54, h: 165, stagger:  50 },   // centre-right cluster start
+  { xPct: 73, h: 148, stagger: 240 },   // right of that
+  { xPct: 29, h: 136, stagger: 170 },   // left-of-centre
+
+  // — second burst, filling gaps and building clusters —
+  { xPct: 57, h: 178, stagger:  20 },   // tall one right by slot 5 — cluster
+  { xPct: 44, h: 141, stagger: 360 },   // near slot 0
+  { xPct: 12, h: 162, stagger: 110 },   // left cluster with slot 2
+  { xPct: 91, h: 155, stagger: 290 },   // far right lone
+  { xPct: 67, h: 133, stagger:  70 },   // short, between slots 6 & 3
+  { xPct: 23, h: 169, stagger: 420 },   // joins slot 2 cluster
+  { xPct: 48, h: 145, stagger: 150 },   // centre fill
+  { xPct: 79, h: 175, stagger: 230 },   // tallest right-zone
+
+  // — third wave, denser clustering —
+  { xPct: 35, h: 138, stagger: 330 },   // left of centre group
+  { xPct: 59, h: 152, stagger:  40 },   // right of centre, near slot 1
+  { xPct:  4, h: 143, stagger: 190 },   // extreme left edge
+  { xPct: 86, h: 161, stagger: 270 },   // far right cluster with slot 11
+  { xPct: 26, h: 174, stagger:  95 },   // left cluster fills in
+  { xPct: 70, h: 137, stagger: 380 },   // right mid, near slot 6
+  { xPct: 42, h: 156, stagger: 210 },   // centre dense patch
+
+  // — fourth wave, finishing touches and micro-clusters —
+  { xPct: 52, h: 147, stagger:  60 },   // tight cluster around centre
+  { xPct: 15, h: 166, stagger: 300 },   // near slot 2 group
+  { xPct: 76, h: 142, stagger: 140 },   // right side fills dense
+  { xPct: 32, h: 153, stagger: 440 },   // left-centre gap fill
+  { xPct: 64, h: 170, stagger:  30 },   // tall right-of-centre
+  { xPct:  9, h: 135, stagger: 350 },   // left cluster small one
+  { xPct: 94, h: 159, stagger: 185 },   // far right edge, lone
 ];
 
 const W  = 68;   // SVG width per dandelion
