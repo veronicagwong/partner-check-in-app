@@ -83,12 +83,12 @@ const FLOWERS: FlowerDef[] = [
       {
         w: 154, h: 126,
         bg: 'radial-gradient(ellipse, rgba(244,150,122,0.9) 0%, transparent 70%)',
-        blurPx: 10, delayOffset: 0.15,
+        blurPx: 10, delayOffset: 0.04,
       },
       {
         w: 110, h:  90,
         bg: 'radial-gradient(ellipse, #E8543A 25%, rgba(232,84,58,0) 70%)',
-        blurPx:  3, delayOffset: 0.30,
+        blurPx:  3, delayOffset: 0.08,
       },
     ],
   },
@@ -105,12 +105,12 @@ const FLOWERS: FlowerDef[] = [
       {
         w: 160, h: 160,
         bg: 'radial-gradient(circle, rgba(255,214,208,0.85) 0%, transparent 70%)',
-        blurPx: 14, delayOffset: 0.15,
+        blurPx: 14, delayOffset: 0.04,
       },
       {
         w: 120, h: 120,
         bg: 'radial-gradient(circle, #FFF5F0 15%, rgba(255,245,240,0) 70%)',
-        blurPx:  4, delayOffset: 0.30,
+        blurPx:  4, delayOffset: 0.08,
       },
     ],
   },
@@ -127,12 +127,12 @@ const FLOWERS: FlowerDef[] = [
       {
         w:  90, h:  90,
         bg: 'radial-gradient(circle, rgba(255,224,102,0.9) 0%, transparent 70%)',
-        blurPx:  8, delayOffset: 0.15,
+        blurPx:  8, delayOffset: 0.04,
       },
       {
         w:  60, h:  60,
         bg: 'radial-gradient(circle, #FFD600 28%, rgba(255,214,0,0) 70%)',
-        blurPx:  2, delayOffset: 0.30,
+        blurPx:  2, delayOffset: 0.08,
       },
     ],
   },
@@ -149,12 +149,12 @@ const FLOWERS: FlowerDef[] = [
       {
         w:  88, h: 132,
         bg: 'radial-gradient(ellipse, rgba(221,182,255,0.85) 0%, transparent 70%)',
-        blurPx: 10, delayOffset: 0.15,
+        blurPx: 10, delayOffset: 0.04,
       },
       {
         w:  60, h:  90,
         bg: 'radial-gradient(ellipse, #C084FC 25%, rgba(192,132,252,0) 70%)',
-        blurPx:  3, delayOffset: 0.30,
+        blurPx:  3, delayOffset: 0.08,
       },
     ],
   },
@@ -171,12 +171,12 @@ const FLOWERS: FlowerDef[] = [
       {
         w: 130, h: 130,
         bg: 'radial-gradient(circle, rgba(255,179,217,0.80) 0%, transparent 70%)',
-        blurPx: 16, delayOffset: 0.15,
+        blurPx: 16, delayOffset: 0.04,
       },
       {
         w:  80, h:  80,
         bg: 'radial-gradient(circle, #FF6EB4 18%, rgba(255,110,180,0) 70%)',
-        blurPx:  5, delayOffset: 0.30,
+        blurPx:  5, delayOffset: 0.08,
       },
     ],
   },
@@ -224,7 +224,7 @@ function FlowerBloom({ h, baseDelay, kind }: {
             filter:       `blur(${layer.blurPx}px)`,
             borderRadius: '50%',
             mixBlendMode: 'screen' as React.CSSProperties['mixBlendMode'],
-            animation:    `flower-bloom 2s ease-out ${baseDelay + 0.35 + layer.delayOffset}s both`,
+            animation:    `flower-bloom 0.15s ease-out ${baseDelay + 0.35 + layer.delayOffset}s both`,
           }} />
         </div>
       ))}
