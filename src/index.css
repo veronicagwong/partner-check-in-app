@@ -91,6 +91,38 @@ body.drawer-open {
     blob-drift-b 8.5s ease-in-out infinite;
 }
 
+/* ── Tulip animations (motion replicated from Lottie keyframe data) ──────── */
+
+/* Spring scale-up: cubic-bezier from Lottie (0.286, 1, 0.333, 0) overshoots */
+@keyframes tulip-stem-grow {
+  from { transform: scaleY(0); }
+  to   { transform: scaleY(1); }
+}
+
+@keyframes tulip-bloom-grow {
+  0%   { transform: scale(0.05); }   /* starts as a tiny dot */
+  60%  { transform: scale(1.18); }   /* overshoots — feels alive */
+  80%  { transform: scale(0.94); }   /* pulls back */
+  100% { transform: scale(1);    }   /* settles */
+}
+
+/* Damped rotation oscillation — exactly matches Lottie keyframe amplitudes:
+   ±5° → ±3° → ±1.5° → ±0.7° → ±0.3° → ±0.1° → 0°                        */
+@keyframes tulip-wobble {
+  0%   { transform: rotate(0deg);    }
+  7%   { transform: rotate(5deg);    }
+  21%  { transform: rotate(-5deg);   }
+  34%  { transform: rotate(3deg);    }
+  47%  { transform: rotate(-3deg);   }
+  59%  { transform: rotate(1.5deg);  }
+  70%  { transform: rotate(-1.5deg); }
+  79%  { transform: rotate(0.7deg);  }
+  86%  { transform: rotate(-0.7deg); }
+  91%  { transform: rotate(0.3deg);  }
+  95%  { transform: rotate(-0.1deg); }
+  100% { transform: rotate(0deg);    }
+}
+
 /* ── Grass blade animations ───────────────────────────────────────────────── */
 
 @keyframes blade-grow {

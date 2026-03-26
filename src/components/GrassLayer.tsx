@@ -2,8 +2,8 @@ import React, { useMemo } from 'react';
 
 // ── Wilt state ─────────────────────────────────────────────────────────────────
 // idle       — normal upright state
-// wilted     — blades have drooped into a fishhook shape + greyscale
-// recovering — blades returning to upright, colour restoring
+// wilted     — blades shrink down + turn greyscale
+// recovering — blades grow back, colour restoring
 
 export type WiltState = 'idle' | 'wilted' | 'recovering';
 
@@ -100,51 +100,6 @@ function getHealthyPath(h: number, w: number, lean: number, cx: number, halfBase
   ].join(' ');
 }
 
-// Wilted — open stroked center-line in a shepherd's-crook / fishhook shape.
-//
-// Using a stroked path instead of a filled closed shape means both "edges"
-// follow exactly the same curve, so the blade stays uniformly thin throughout
-// the hook — no fat belly, no twisting artefacts.
-//
-// The hook always curves LEFT (curlDir = -1) to prevent inter-layer crossing.
-// droopFactor (0.85/1.00/1.15) varies the hook radius per blade for an organic look.
-function getWiltedCenterLine(
-  h: number, lean: number, cx: number,
-  curlDir: number, droopFactor: number,
-): string {
-  const f = (n: number) => n.toFixed(1);
-  const d = droopFactor;
-
-  // Top of the hook arc (furthest point in the curl direction)
-  const apexX = cx + curlDir * h * 0.28 * d;
-  const apexY = h * 0.02;
-
-  // Tip of hook (where it points back downward)
-  const tipX = cx + curlDir * h * 0.38 * d;
-  const tipY = h * (0.42 + d * 0.10);
-
-  // Segment 1: base → apex
-  //   CP1 near base x (blade rises nearly straight for bottom ~65%)
-  //   CP2 near stem top following lean, before the hook starts
-  const seg1cp1x = cx + lean * h * 0.05;
-  const seg1cp1y = h * 0.60;
-  const seg1cp2x = cx + lean * h * 0.08;
-  const seg1cp2y = h * 0.12;
-
-  // Segment 2: apex → tip (the hook arc)
-  //   CP1 extends past apex in the curl direction (top of the J-curve)
-  //   CP2 directly below CP1 → bezier arrives at tip nearly vertically (tip points down)
-  const hookCpX = cx + curlDir * h * 0.44 * d;
-  const seg2cp1y = h * 0.01;
-  const seg2cp2y = h * 0.35;
-
-  return (
-    `M ${f(cx)},${h} ` +
-    `C ${f(seg1cp1x)},${f(seg1cp1y)} ${f(seg1cp2x)},${f(seg1cp2y)} ${f(apexX)},${f(apexY)} ` +
-    `C ${f(hookCpX)},${f(seg2cp1y)} ${f(hookCpX)},${f(seg2cp2y)} ${f(tipX)},${f(tipY)}`
-  );
-}
-
 // ── Blade renderer ────────────────────────────────────────────────────────────
 
 function Blade({
@@ -161,51 +116,29 @@ function Blade({
   wiltDuration: number;
 }) {
   const { halfBase, halfSVG, svgW, cx, viewBox } = getBladeGeometry(h, w, lean);
-  const healthyPath = useMemo(() => getHealthyPath(h, w, lean, cx, halfBase), [h, w, lean, cx, halfBase]);
-
-  // All blades curl the same direction (left) — prevents inter-layer crossing.
-  const curlDir     = -1;
-  const droopFactor = 0.85 + (bladeIndex % 3) * 0.15;
-  const wiltedLine  = useMemo(
-    () => getWiltedCenterLine(h, lean, cx, curlDir, droopFactor),
-    [h, lean, cx, droopFactor],
-  );
+  const bladePath = useMemo(() => getHealthyPath(h, w, lean, cx, halfBase), [h, w, lean, cx, halfBase]);
 
   const swayDelay = growDelay + GROW_DUR + 0.1;
-  const wiltDelay = bladeIndex * 0.08; // stagger blades 80 ms apart
+  const wiltDelay = bladeIndex * 0.08;
 
-  // ── Crossfade: healthy fades out, wilted hook fades in ───────────────────
-  // No path interpolation needed — each shape is independently correct.
-  const isWilted     = wiltState === 'wilted';
-  const isRecovering = wiltState === 'recovering';
-
-  const healthyOpacity = isWilted ? 0 : 1;
-  const wiltedOpacity  = isWilted ? 1 : 0;
-
-  let opacityTransition: string;
-  if (isWilted) {
-    opacityTransition = `opacity ${wiltDuration}s ease-in ${wiltDelay}s`;
-  } else if (isRecovering) {
-    opacityTransition = 'opacity 3s ease-out';
-  } else {
-    opacityTransition = 'none';
-  }
-
-  // ── Colour desaturation ──────────────────────────────────────────────────
+  // ── Shrink + grey on wilt ────────────────────────────────────────────────
+  let scaleY: number;
   let filterStyle: string;
-  let filterTransition: string;
-  if (wiltState === 'wilted') {
-    filterStyle      = 'grayscale(1) brightness(0.70)';
-    filterTransition = `filter ${wiltDuration}s ease-in ${wiltDelay}s`;
-  } else if (wiltState === 'recovering') {
-    filterStyle      = 'grayscale(0) brightness(1)';
-    filterTransition = 'filter 3s ease-out';
-  } else {
-    filterStyle      = 'grayscale(0) brightness(1)';
-    filterTransition = 'none';
-  }
+  let wiltTransition: string;
 
-  const strokeWidth = w * 0.75;
+  if (wiltState === 'wilted') {
+    scaleY           = 0.12;
+    filterStyle      = 'grayscale(1) brightness(0.65)';
+    wiltTransition   = `transform ${wiltDuration}s ease-in ${wiltDelay}s, filter ${wiltDuration}s ease-in ${wiltDelay}s`;
+  } else if (wiltState === 'recovering') {
+    scaleY           = 1;
+    filterStyle      = 'grayscale(0) brightness(1)';
+    wiltTransition   = 'transform 2.5s cubic-bezier(0.34, 1.56, 0.64, 1), filter 2.5s ease-out';
+  } else {
+    scaleY           = 1;
+    filterStyle      = 'grayscale(0) brightness(1)';
+    wiltTransition   = 'none';
+  }
 
   return (
     <div style={{
@@ -218,13 +151,14 @@ function Blade({
         transformOrigin: 'bottom center',
         animation: `blade-grow ${GROW_DUR}s cubic-bezier(0.34, 1.56, 0.64, 1) ${growDelay}s both`,
       }}>
-        {/* sway + grayscale filter */}
+        {/* sway + wilt (shrink + grey) */}
         <div style={{
           transformOrigin: 'bottom center',
           '--sway-amp': `${swayAmp}deg`,
           animation: `blade-sway ${swayDur}s ease-in-out ${swayDelay + swayPhase}s infinite`,
+          transform: `scaleY(${scaleY})`,
           filter: filterStyle,
-          transition: filterTransition,
+          transition: wiltTransition,
         } as React.CSSProperties}>
           <svg
             width={svgW}
@@ -234,38 +168,12 @@ function Blade({
             style={{ display: 'block', overflow: 'visible' }}
           >
             <defs>
-              {/* Gradient for healthy filled blade (objectBoundingBox, y-axis) */}
               <linearGradient id={gradId} x1="0" y1="1" x2="0" y2="0">
                 <stop offset="0%"   stopColor={baseColor} />
                 <stop offset="100%" stopColor={tipColor}  />
               </linearGradient>
-              {/* Gradient for wilted stroked path (userSpaceOnUse so it maps to actual y coords) */}
-              <linearGradient id={`${gradId}-w`} gradientUnits="userSpaceOnUse"
-                x1={cx.toFixed(1)} y1={h} x2={cx.toFixed(1)} y2="0">
-                <stop offset="0%"   stopColor={baseColor} />
-                <stop offset="100%" stopColor={tipColor}  />
-              </linearGradient>
             </defs>
-
-            {/* Healthy blade — filled closed path, fades out on wilt */}
-            <path
-              d={healthyPath}
-              fill={`url(#${gradId})`}
-              style={{ opacity: healthyOpacity, transition: opacityTransition }}
-            />
-
-            {/* Wilted hook — stroked open center-line, fades in on wilt.
-                A stroked path keeps blade thickness uniform around the hook arc
-                — no fat belly, no path self-intersection. */}
-            <path
-              d={wiltedLine}
-              fill="none"
-              stroke={`url(#${gradId}-w)`}
-              strokeWidth={strokeWidth}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ opacity: wiltedOpacity, transition: opacityTransition }}
-            />
+            <path d={bladePath} fill={`url(#${gradId})`} />
           </svg>
         </div>
       </div>

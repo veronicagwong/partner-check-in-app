@@ -3,6 +3,7 @@ import { useEmotionMirror } from '../../hooks/useEmotionMirror';
 import type { FaceEmotion } from '../../types/emotion';
 import { GrassLayer } from '../GrassLayer';
 import type { WiltState } from '../GrassLayer';
+import { TulipLayer } from '../TulipLayer';
 
 interface Props {
   isOpen: boolean;
@@ -169,6 +170,11 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
   const sadTimerRef                   = useRef<ReturnType<typeof setTimeout> | null>(null);
   const recoveryTimerRef              = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── Tulip state — driven by sustained happy detection ─────────────────────
+  const [tulipCount, setTulipCount]   = useState(0);
+  const tulipCountRef                 = useRef(0);
+  const smileIntervalRef              = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const mirrorActive = mounted && !animatingOut;
   const { videoRef, isLoading, cameraPermission, faces, cameras, error } =
     useEmotionMirror({ active: mirrorActive, deviceId });
@@ -245,11 +251,37 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
     }
   }, [faces]);
 
+  // ── Smile-hold logic: bloom tulips while any face is happy ───────────────
+  useEffect(() => {
+    const anyHappy = faces.some(f => f.emotion === 'happy');
+
+    if (anyHappy) {
+      if (!smileIntervalRef.current) {
+        // Immediately show 2 tulips, then add one more every 2 s (max 8)
+        tulipCountRef.current = Math.max(tulipCountRef.current, 2);
+        setTulipCount(tulipCountRef.current);
+
+        smileIntervalRef.current = setInterval(() => {
+          tulipCountRef.current = Math.min(tulipCountRef.current + 1, 8);
+          setTulipCount(tulipCountRef.current);
+        }, 2000);
+      }
+    } else {
+      if (smileIntervalRef.current) {
+        clearInterval(smileIntervalRef.current);
+        smileIntervalRef.current = null;
+      }
+      tulipCountRef.current = 0;
+      setTulipCount(0);
+    }
+  }, [faces]);
+
   // Clean up timers on unmount
   useEffect(() => {
     return () => {
       if (sadTimerRef.current)      clearTimeout(sadTimerRef.current);
       if (recoveryTimerRef.current) clearTimeout(recoveryTimerRef.current);
+      if (smileIntervalRef.current) clearInterval(smileIntervalRef.current);
     };
   }, []);
 
@@ -452,6 +484,9 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
 
       {/* ── Grass — four-layer ground plane; wilts after 2.5 s of sad ── */}
       <GrassLayer wiltState={wiltState} />
+
+      {/* ── Tulips — bloom while any face is happy ── */}
+      <TulipLayer count={tulipCount} />
 
       {/* ── Temp debug badge — remove once wilt is confirmed working ── */}
       <div style={{
