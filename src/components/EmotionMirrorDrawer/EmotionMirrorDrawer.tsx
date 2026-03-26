@@ -198,6 +198,7 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
   const [tulipCount, setTulipCount]   = useState(0);
   const tulipCountRef                 = useRef(0);
   const smileIntervalRef              = useRef<ReturnType<typeof setInterval> | null>(null);
+  const wiltIntervalRef               = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const mirrorActive = mounted && !animatingOut;
   const { videoRef, isLoading, cameraPermission, faces, cameras, error } =
@@ -280,8 +281,13 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
     const anyHappy = faces.some(f => f.emotion === 'happy');
 
     if (anyHappy) {
+      // Cancel any in-progress wilt countdown
+      if (wiltIntervalRef.current) {
+        clearInterval(wiltIntervalRef.current);
+        wiltIntervalRef.current = null;
+      }
       if (!smileIntervalRef.current) {
-        // Immediately show 2 dandelions, then add one more every 1.5 s (max 30)
+        // Immediately show 2 flowers, then add one more every 1.5 s (max 30)
         tulipCountRef.current = Math.max(tulipCountRef.current, 2);
         setTulipCount(tulipCountRef.current);
 
@@ -295,8 +301,18 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
         clearInterval(smileIntervalRef.current);
         smileIntervalRef.current = null;
       }
-      tulipCountRef.current = 0;
-      setTulipCount(0);
+      // Gradually remove flowers one by one (200 ms each) instead of instant reset
+      if (wiltIntervalRef.current === null && tulipCountRef.current > 0) {
+        wiltIntervalRef.current = setInterval(() => {
+          tulipCountRef.current -= 1;
+          setTulipCount(tulipCountRef.current);
+          if (tulipCountRef.current <= 0) {
+            clearInterval(wiltIntervalRef.current!);
+            wiltIntervalRef.current  = null;
+            tulipCountRef.current    = 0;
+          }
+        }, 200);
+      }
     }
   }, [faces]);
 
@@ -306,6 +322,7 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
       if (sadTimerRef.current)      clearTimeout(sadTimerRef.current);
       if (recoveryTimerRef.current) clearTimeout(recoveryTimerRef.current);
       if (smileIntervalRef.current) clearInterval(smileIntervalRef.current);
+      if (wiltIntervalRef.current)  clearInterval(wiltIntervalRef.current);
     };
   }, []);
 

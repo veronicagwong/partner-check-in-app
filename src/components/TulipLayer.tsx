@@ -280,14 +280,21 @@ function Flower({ visible, h, stagger, xPct, kind, scale }: {
 
   useEffect(() => {
     if (visible && !prevVisible.current) {
+      // Cancel any pending unmount from a previous disappear animation
+      if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
       timerRef.current = setTimeout(() => {
         setGen(g => g + 1);
         timerRef.current = null;
       }, stagger);
     }
-    if (!visible) {
+    if (!visible && prevVisible.current) {
+      // Cancel pending stagger mount
       if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
-      setGen(0);
+      // Let the scale-down + fade animation play, then unmount
+      timerRef.current = setTimeout(() => {
+        setGen(0);
+        timerRef.current = null;
+      }, 550);
     }
     prevVisible.current = visible;
   }, [visible, stagger]);
@@ -296,14 +303,18 @@ function Flower({ visible, h, stagger, xPct, kind, scale }: {
 
   return (
     <div style={{
-      position:      'absolute',
-      bottom:        0,
-      left:          `calc(${xPct}% - ${W / 2}px)`,
-      width:         W,
-      height:        h,
-      opacity:       visible ? 1 : 0,
-      transition:    visible ? 'none' : 'opacity 0.8s ease',
-      pointerEvents: 'none',
+      position:        'absolute',
+      bottom:          0,
+      left:            `calc(${xPct}% - ${W / 2}px)`,
+      width:           W,
+      height:          h,
+      opacity:         visible ? 1 : 0,
+      transform:       visible ? 'scale(1)' : 'scale(0)',
+      transformOrigin: 'bottom center',
+      transition:      visible
+        ? 'none'
+        : 'opacity 0.5s ease, transform 0.5s cubic-bezier(0.4, 0, 0.8, 0.2)',
+      pointerEvents:   'none',
     }}>
       {/* Scale wrapper: keeps base anchored to ground, shrinks toward back */}
       <div style={{
