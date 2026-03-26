@@ -98,7 +98,7 @@ function DandelionSVG({ h, baseDelay }: { h: number; baseDelay: number }) {
 
       {/* ── Part 1: Stem — grows upward from ground ── */}
       <div style={{ position: 'absolute', inset: 0 }}>
-        <SpringPart scaleAxis="Y" duration={0.70} delay={baseDelay}
+        <SpringPart scaleAxis="Y" duration={0.60} delay={baseDelay}
           originX={`${CX}px`} originY={`${h}px`}>
           <svg width={W} height={h} viewBox={`0 0 ${W} ${h}`} fill="none" style={{ display: 'block' }}>
             {/* main stem */}
@@ -113,7 +113,7 @@ function DandelionSVG({ h, baseDelay }: { h: number; baseDelay: number }) {
 
       {/* ── Part 2: Dandelion head — starts AFTER stem finishes, springs small→big ── */}
       <div style={{ position: 'absolute', inset: 0 }}>
-        <SpringPart scaleAxis="both" duration={0.65} delay={baseDelay + 0.70}
+        <SpringPart scaleAxis="both" duration={0.55} delay={baseDelay + 0.60}
           originX={`${CX}px`} originY={`${headY}px`}>
           <svg width={W} height={h} viewBox={`0 0 ${W} ${h}`} fill="none" style={{ display: 'block' }}>
             {/* soft glow halo */}
