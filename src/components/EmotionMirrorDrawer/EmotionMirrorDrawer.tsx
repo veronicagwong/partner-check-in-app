@@ -630,16 +630,6 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
         </div>
       )}
 
-      {/* ── Vignette — softens screen edges ── */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: 'radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.22) 100%)',
-          pointerEvents: 'none',
-          zIndex: 10,
-        }}
-      />
 
       {/* ── Privacy note — bottom center ── */}
       <p
