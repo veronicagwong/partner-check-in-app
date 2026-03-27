@@ -220,7 +220,7 @@ function FlowerBloom({ h, baseDelay, kind }: {
           borderRadius: '50%',
           background:   def.auraBg,
           filter:       `blur(${def.auraBlur}px)`,
-          animation:    `aura-bloom 0.6s ease-out ${auraDelay}s both`,
+          animation:    `aura-bloom 0.3s ease-out ${auraDelay}s both`,
         }} />
 
         {/* Petals — rotation wrapper (zero-size anchor) + inner ellipse */}
@@ -245,7 +245,7 @@ function FlowerBloom({ h, baseDelay, kind }: {
                 background:      def.petalBg,
                 filter:          `blur(${def.petalBlur}px)`,
                 transformOrigin: '50% 100%',
-                animation:       `petal-bloom 1.8s ease-out ${petalStart + i * 0.05}s both`,
+                animation:       `petal-bloom 0.5s ease-out ${petalStart + i * 0.03}s both`,
               }} />
             </div>
           );
