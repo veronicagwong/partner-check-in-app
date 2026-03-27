@@ -69,7 +69,7 @@ function resolveIsDark(faces: FaceEmotion[]): boolean {
 }
 
 // Grain overlay data URI — SVG feTurbulence fractal noise
-const GRAIN_URI = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.62' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23grain)'/%3E%3C/svg%3E")`;
+const GRAIN_URI = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23grain)'/%3E%3C/svg%3E")`;
 
 // ── Emotion-aware blob styling ────────────────────────────────────────────────
 
@@ -390,7 +390,7 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
         position: 'absolute', inset: 0, zIndex: 1,
         backgroundImage: GRAIN_URI,
         backgroundSize: '320px 320px',
-        opacity: 0.22,
+        opacity: 0.42,
         mixBlendMode: 'overlay',
         pointerEvents: 'none',
       }} />
