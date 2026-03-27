@@ -18,7 +18,7 @@ function resolveColorState(faces: FaceEmotion[]): ColorState {
   if (count === 1) {
     const e = faces[0].emotion;
     if (e === 'happy')   return { background: '#FFFDE7', label: 'One of you is feeling good' };
-    if (e === 'sad')     return { background: '#E3F2FD', label: 'One of you needs some care' };
+    if (e === 'sad')     return { background: '#ABABAB', label: 'One of you needs some care' };
     return                      { background: '#FAF9F6', label: 'One of you is present' };
   }
 
@@ -27,7 +27,7 @@ function resolveColorState(faces: FaceEmotion[]): ColorState {
   if (a.emotion === 'happy' && b.emotion === 'happy')
     return { background: '#FFD600', label: 'You\'re both thriving' };
   if (a.emotion === 'sad' && b.emotion === 'sad')
-    return { background: '#0D2B6B', label: 'You\'re both carrying something heavy' };
+    return { background: '#3A3A3A', label: 'You\'re both carrying something heavy' };
   if (
     (a.emotion === 'happy' && b.emotion === 'sad') ||
     (a.emotion === 'sad'   && b.emotion === 'happy')
@@ -41,7 +41,7 @@ const CIRCLE_SIZE = 80;
 
 export function EmotionColorField({ faces, isLoading }: Props) {
   const { background } = resolveColorState(faces);
-  const isDark = background === '#0D2B6B';
+  const isDark = background === '#3A3A3A';
 
   // Circle colours per emotion
   function circleColor(emotion: FaceEmotion['emotion']): string {

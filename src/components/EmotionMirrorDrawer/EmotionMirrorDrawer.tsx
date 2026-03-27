@@ -38,9 +38,9 @@ interface Props {
 const GRAD = {
   neutral:    '#ededeb',   // flat — no gradient for neutral, avoids gloomy grey ramp
   happyOne:   'linear-gradient(to top, #f5d76e, #fffde7)',
-  sadOne:     'linear-gradient(to top, #90bcd4, #e3f2fd)',
+  sadOne:     'linear-gradient(to top, #858585, #C4C4C4)',
   happyBoth:  'linear-gradient(to top, #f0b800, #FFD600)',
-  sadBoth:    'linear-gradient(to top, #06194a, #0D2B6B)',
+  sadBoth:    'linear-gradient(to top, #1C1C1C, #3A3A3A)',
   mixed:      'linear-gradient(to top, #616161, #9E9E9E)',
 };
 
