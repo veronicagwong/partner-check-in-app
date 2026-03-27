@@ -98,79 +98,79 @@ interface FlowerDef {
 }
 
 const FLOWERS: FlowerDef[] = [
-  // ── 0  Poppy — 6 petals, vivid coral-orange, heavy dreamy blur ────────────
+  // ── 0  Poppy — 6 wide rounded petals, coral-red ──────────────────────────
   {
     bloomTop: 65,
     angles: [0, 60, 120, 180, 240, 300],
-    petalW: 72, petalH: 116,
-    petalBg:  'radial-gradient(ellipse at 50% 25%, rgba(255,200,150,0.95) 0%, #FF6B35 45%, rgba(220,70,20,0.08) 100%)',
-    petalBlur: 48,
+    petalW: 64, petalH: 106,
+    petalBg:  'radial-gradient(ellipse at 50% 25%, #F4967A 0%, #E8543A 55%, rgba(184,52,26,0.05) 100%)',
+    petalBlur: 11,
     petalBorderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%',
-    auraSize: 380,
-    auraBg:   'radial-gradient(circle, rgba(255,107,53,0.72) 0%, transparent 70%)',
-    auraBlur: 72,
-    centerSize: 36,
+    auraSize: 310,
+    auraBg:   'radial-gradient(circle, rgba(232,84,58,0.50) 0%, transparent 70%)',
+    auraBlur: 52,
+    centerSize: 32,
     centerBg: 'radial-gradient(circle, #FFE040 0%, #FF8800 70%)',
   },
 
-  // ── 1  Peony — 6 petals, hot pink, bleeds like light ─────────────────────
+  // ── 1  Peony — 6 very soft blush petals, almost overlapping ──────────────
   {
     bloomTop: 72,
     angles: [0, 60, 120, 180, 240, 300],
-    petalW: 76, petalH: 108,
-    petalBg:  'radial-gradient(ellipse at 50% 22%, rgba(255,200,230,0.95) 0%, #FF3D8A 45%, rgba(200,20,100,0.08) 100%)',
-    petalBlur: 52,
+    petalW: 70, petalH: 98,
+    petalBg:  'radial-gradient(ellipse at 50% 22%, #FFF0EE 0%, #FFD6D0 55%, rgba(255,170,160,0.05) 100%)',
+    petalBlur: 14,
     petalBorderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%',
-    auraSize: 400,
-    auraBg:   'radial-gradient(circle, rgba(255,61,138,0.68) 0%, transparent 70%)',
-    auraBlur: 78,
-    centerSize: 38,
-    centerBg: 'radial-gradient(circle, #FFF0F8 0%, #FFB8DC 65%)',
+    auraSize: 330,
+    auraBg:   'radial-gradient(circle, rgba(255,180,170,0.42) 0%, transparent 70%)',
+    auraBlur: 58,
+    centerSize: 36,
+    centerBg: 'radial-gradient(circle, #FFF8F5 0%, #FFE0D8 65%)',
   },
 
-  // ── 2  Buttercup — 3 petals, warm yellow glow ────────────────────────────
+  // ── 2  Buttercup — 3 narrow pointed-tip petals, bright gold ──────────────
   {
     bloomTop: 48,
     angles: [0, 120, 240],
-    petalW: 46, petalH: 86,
-    petalBg:  'radial-gradient(ellipse at 50% 18%, rgba(255,248,180,0.95) 0%, #FFD700 48%, rgba(210,160,0,0.08) 100%)',
-    petalBlur: 44,
+    petalW: 40, petalH: 78,
+    petalBg:  'radial-gradient(ellipse at 50% 18%, #FFE866 0%, #FFD600 55%, rgba(210,170,0,0.05) 100%)',
+    petalBlur: 8,
     petalBorderRadius: '40% 40% 50% 50% / 70% 70% 30% 30%',
-    auraSize: 280,
-    auraBg:   'radial-gradient(circle, rgba(255,215,0,0.70) 0%, transparent 70%)',
-    auraBlur: 65,
-    centerSize: 30,
+    auraSize: 205,
+    auraBg:   'radial-gradient(circle, rgba(255,214,0,0.52) 0%, transparent 70%)',
+    auraBlur: 38,
+    centerSize: 28,
     centerBg: 'radial-gradient(circle, #FFEE66 0%, #FFA500 70%)',
   },
 
-  // ── 3  Iris — 2 petals, lavender-blue, soft deep glow ────────────────────
+  // ── 3  Iris — 2 elongated slightly-wavy petals, soft violet ──────────────
   {
     bloomTop: 60,
     angles: [0, 180],
-    petalW: 58, petalH: 102,
-    petalBg:  'radial-gradient(ellipse at 50% 22%, rgba(210,210,255,0.95) 0%, #8B7FE8 48%, rgba(80,60,200,0.08) 100%)',
-    petalBlur: 50,
+    petalW: 50, petalH: 92,
+    petalBg:  'radial-gradient(ellipse at 50% 22%, #DDB6FF 0%, #C084FC 55%, rgba(150,60,240,0.05) 100%)',
+    petalBlur: 12,
     petalBorderRadius: '60% 40% 60% 40% / 60% 60% 40% 40%',
-    auraSize: 310,
-    auraBg:   'radial-gradient(circle, rgba(139,127,232,0.65) 0%, transparent 70%)',
-    auraBlur: 70,
-    centerSize: 30,
-    centerBg: 'radial-gradient(circle, #F0F0FF 0%, #C0A0FF 60%)',
+    auraSize: 248,
+    auraBg:   'radial-gradient(circle, rgba(192,132,252,0.38) 0%, transparent 70%)',
+    auraBlur: 45,
+    centerSize: 26,
+    centerBg: 'radial-gradient(circle, #FFF0FF 0%, #DDB6FF 60%)',
   },
 
-  // ── 4  Wild Rose — 5 uneven petals, warm coral-pink ──────────────────────
+  // ── 4  Wild Rose — 5 petals, organically uneven sizes, hot pink ──────────
   {
     bloomTop: 62,
     angles: [0, 72, 144, 216, 288],
-    petalW: [66, 58, 63, 54, 61],
-    petalH: [100, 92, 106, 90, 102],
-    petalBg:  'radial-gradient(ellipse at 50% 25%, rgba(255,210,210,0.95) 0%, #FF8FAB 47%, rgba(220,60,120,0.08) 100%)',
-    petalBlur: 46,
+    petalW: [60, 52, 57, 48, 55],
+    petalH: [90, 85, 95, 86, 92],
+    petalBg:  'radial-gradient(ellipse at 50% 25%, #FFB3D9 0%, #FF6EB4 55%, rgba(200,40,130,0.05) 100%)',
+    petalBlur: 11,
     petalBorderRadius: '50% 50% 50% 50% / 60% 60% 40% 40%',
-    auraSize: 340,
-    auraBg:   'radial-gradient(circle, rgba(255,80,160,0.65) 0%, transparent 70%)',
-    auraBlur: 74,
-    centerSize: 32,
+    auraSize: 262,
+    auraBg:   'radial-gradient(circle, rgba(255,110,180,0.43) 0%, transparent 70%)',
+    auraBlur: 50,
+    centerSize: 30,
     centerBg: 'radial-gradient(circle, #FFF8F0 0%, #FFE080 65%)',
   },
 ];

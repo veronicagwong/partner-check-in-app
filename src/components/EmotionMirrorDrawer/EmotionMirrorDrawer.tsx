@@ -69,7 +69,7 @@ function resolveIsDark(faces: FaceEmotion[]): boolean {
 }
 
 // Grain overlay data URI — SVG feTurbulence fractal noise
-const GRAIN_URI = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.88' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23grain)'/%3E%3C/svg%3E")`;
+const GRAIN_URI = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='grain'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23grain)'/%3E%3C/svg%3E")`;
 
 // ── Emotion-aware blob styling ────────────────────────────────────────────────
 
@@ -385,40 +385,12 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
         pointerEvents: 'none',
       }} />
 
-      {/* ── Ambient dreamy colour blobs — vivid glows bleeding off all edges ── */}
-      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
-        {/* coral-orange — top-left bleed */}
-        <div style={{
-          position: 'absolute', width: 540, height: 540, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,107,53,0.58) 0%, transparent 70%)',
-          filter: 'blur(80px)', top: -180, left: -150,
-        }} />
-        {/* hot-pink — right bleed */}
-        <div style={{
-          position: 'absolute', width: 480, height: 480, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,61,138,0.52) 0%, transparent 70%)',
-          filter: 'blur(80px)', top: '8%', right: -160,
-        }} />
-        {/* lavender-blue — left bleed, mid-low */}
-        <div style={{
-          position: 'absolute', width: 500, height: 500, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(139,127,232,0.50) 0%, transparent 70%)',
-          filter: 'blur(80px)', bottom: '18%', left: -150,
-        }} />
-        {/* warm yellow — bottom-right bleed */}
-        <div style={{
-          position: 'absolute', width: 460, height: 460, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(255,215,0,0.48) 0%, transparent 70%)',
-          filter: 'blur(80px)', bottom: -120, right: -100,
-        }} />
-      </div>
-
-      {/* ── Grain overlay — fine monochromatic film grain, on top of all content ── */}
+      {/* ── Grain overlay — fine art paper texture, larger tile ── */}
       <div style={{
-        position: 'absolute', inset: 0, zIndex: 5,
+        position: 'absolute', inset: 0, zIndex: 1,
         backgroundImage: GRAIN_URI,
-        backgroundSize: '200px 200px',
-        opacity: 0.10,
+        backgroundSize: '320px 320px',
+        opacity: 0.42,
         mixBlendMode: 'overlay',
         pointerEvents: 'none',
       }} />
@@ -442,7 +414,7 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
           cursor: 'pointer',
           color: isDark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.5)',
           fontSize: 16,
-          zIndex: 10,
+          zIndex: 2,
           transition: 'background 0.3s',
         }}
       >
@@ -461,7 +433,7 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
           overflow: 'hidden',
           background: '#111',
           boxShadow: '0 6px 32px rgba(0,0,0,0.25)',
-          zIndex: 10,
+          zIndex: 2,
         }}
       >
         {cameraPermission === 'denied' ? (
@@ -642,7 +614,7 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
             justifyContent: 'center',
             cursor: 'pointer',
             fontSize: 18,
-            zIndex: 10,
+            zIndex: 2,
           }}
         >
           📷
@@ -690,7 +662,6 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
           margin: 0,
           pointerEvents: 'none',
           transition: 'color 1.2s ease',
-          zIndex: 10,
         }}
       >
         All processing happens on your device. Nothing is recorded or stored.
