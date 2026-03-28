@@ -4,6 +4,7 @@ import type { FaceEmotion } from '../../types/emotion';
 import { GrassLayer } from '../GrassLayer';
 import type { WiltState } from '../GrassLayer';
 import { TulipLayer } from '../TulipLayer';
+import { BirdLayer } from '../BirdLayer';
 
 interface Props {
   isOpen: boolean;
@@ -571,6 +572,13 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
 
       {/* ── Tulips — bloom while any face is happy ── */}
       <TulipLayer count={tulipCount} />
+
+      {/* ── Bird — flutters across when both faces are happy ── */}
+      <BirdLayer active={
+        faces.length === 2 &&
+        faces[0].emotion === 'happy' &&
+        faces[1].emotion === 'happy'
+      } />
 
       {/* ── Temp debug badge — remove once wilt is confirmed working ── */}
       <div style={{

@@ -155,3 +155,21 @@ body.drawer-open {
   25%       { transform: rotate(calc(var(--sway-amp) * -1)); }
   75%       { transform: rotate(var(--sway-amp)); }
 }
+
+/* ── Bird ─────────────────────────────────────────────────────────────────── */
+@keyframes bird-fly-ltr {
+  from { transform: translateX(-60px); }
+  to   { transform: translateX(calc(100vw + 60px)); }
+}
+@keyframes bird-fly-rtl {
+  from { transform: translateX(calc(100vw + 60px)); }
+  to   { transform: translateX(-60px); }
+}
+@keyframes bird-bob {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+@keyframes wing-flap {
+  0%, 100% { transform: rotate(0deg); }
+  50%       { transform: rotate(22deg); }
+}
