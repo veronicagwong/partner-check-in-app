@@ -194,17 +194,7 @@ export function useEmotionMirror({ active, deviceId }: UseEmotionMirrorOptions) 
         const videoConstraint: MediaTrackConstraints = deviceId
           ? { deviceId: { exact: deviceId } }
           : { facingMode: 'user' };
-        let stream: MediaStream;
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraint });
-        } catch (constraintErr) {
-          // OverconstrainedError: stale / unavailable deviceId — fall back to default camera
-          if ((constraintErr as Error).name === 'OverconstrainedError' && deviceId) {
-            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
-          } else {
-            throw constraintErr;
-          }
-        }
+        const stream = await navigator.mediaDevices.getUserMedia({ video: videoConstraint });
         if (cancelled) {
           stream.getTracks().forEach((t) => t.stop());
           return;
