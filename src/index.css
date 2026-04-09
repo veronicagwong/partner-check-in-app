@@ -156,6 +156,14 @@ body.drawer-open {
   75%       { transform: rotate(var(--sway-amp)); }
 }
 
+/* ── Pixel theme transition ──────────────────────────────────────────────── */
+@keyframes pixel-wipe {
+  0%   { opacity: 0; }
+  28%  { opacity: 1; }
+  72%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 /* ── Bird ─────────────────────────────────────────────────────────────────── */
 @keyframes bird-fly-ltr {
   from { transform: translateX(-60px); }

@@ -5,6 +5,9 @@ import { GrassLayer } from '../GrassLayer';
 import type { WiltState } from '../GrassLayer';
 import { TulipLayer } from '../TulipLayer';
 import { BirdLayer } from '../BirdLayer';
+import { PixelGrassLayer } from '../PixelGrassLayer';
+import { PixelFlowerLayer } from '../PixelFlowerLayer';
+import { PixelTransition } from '../PixelTransition';
 
 interface Props {
   isOpen: boolean;
@@ -149,6 +152,28 @@ function getBlobStyle(emotion: FaceEmotion['emotion']): {
 // Loading state uses neutral glass
 const loadingGlass: React.CSSProperties = getBlobStyle('neutral').glass;
 
+// ── Pixel blob style ──────────────────────────────────────────────────────────
+const PIXEL_BLOB_BG: Record<FaceEmotion['emotion'], string> = {
+  happy:   '#F5C800',
+  sad:     '#6688EE',
+  neutral: '#CCCCCC',
+};
+const PIXEL_BLOB_BORDER: Record<FaceEmotion['emotion'], string> = {
+  happy:   '#B89000',
+  sad:     '#3344AA',
+  neutral: '#888888',
+};
+
+function getPixelBlobStyle(emotion: FaceEmotion['emotion']): React.CSSProperties {
+  return {
+    background:     PIXEL_BLOB_BG[emotion],
+    border:         `3px solid ${PIXEL_BLOB_BORDER[emotion]}`,
+    borderRadius:   4,
+    imageRendering: 'pixelated',
+    boxShadow:      'none',
+  };
+}
+
 // ── Focus trap ────────────────────────────────────────────────────────────────
 
 function useFocusTrap(ref: React.RefObject<HTMLElement | null>, active: boolean) {
@@ -181,6 +206,21 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
   const [animatingOut, setAnimatingOut] = useState(false);
   const [deviceId, setDeviceId]       = useState<string | undefined>(undefined);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // ── Theme ─────────────────────────────────────────────────────────────────
+  type Theme = 'soft' | 'pixel';
+  const [theme, setTheme]                     = useState<Theme>('soft');
+  const [transitionTrigger, setTransitionTrigger] = useState(0);
+  const themeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const changeTheme = (next: Theme) => {
+    if (next === theme) return;
+    setTransitionTrigger(t => t + 1);
+    // Swap theme at midpoint while pixel overlay is fully opaque
+    themeTimerRef.current = setTimeout(() => setTheme(next), 210);
+  };
+
+  useEffect(() => () => { if (themeTimerRef.current) clearTimeout(themeTimerRef.current); }, []);
 
   // ── Gradient crossfade — two layers swap opacity so gradients transition ──
   const [gradA, setGradA]   = useState(() => resolveBackground([]));
@@ -551,6 +591,28 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
           </div>
         ) : faces.length === 0 ? null : (
           faces.map((face, i) => {
+            if (theme === 'pixel') {
+              const pixStyle = getPixelBlobStyle(face.emotion);
+              return (
+                <div key={i} style={{ position: 'relative', width: circleSize, height: circleSize }}>
+                  <div style={{ position: 'absolute', inset: 0, ...pixStyle }}>
+                    {/* Pixel eyes */}
+                    <div style={{ position:'absolute', left:'26%', top:'32%', width:'13%', height:'13%', background:'#111' }} />
+                    <div style={{ position:'absolute', left:'58%', top:'32%', width:'13%', height:'13%', background:'#111' }} />
+                    {/* Pixel mouth */}
+                    {face.emotion === 'happy' && (
+                      <div style={{ position:'absolute', left:'28%', top:'60%', width:'44%', height:'9%', background:'#111' }} />
+                    )}
+                    {face.emotion === 'sad' && (
+                      <div style={{ position:'absolute', left:'28%', top:'64%', width:'44%', height:'9%', background:'#111' }} />
+                    )}
+                    {face.emotion === 'neutral' && (
+                      <div style={{ position:'absolute', left:'28%', top:'62%', width:'44%', height:'6%', background:'#111' }} />
+                    )}
+                  </div>
+                </div>
+              );
+            }
             const { glass, bloom } = getBlobStyle(face.emotion);
             return (
               <div key={i} style={{ position: 'relative', width: circleSize, height: circleSize }}>
@@ -567,11 +629,15 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
         )}
       </div>
 
-      {/* ── Grass — four-layer ground plane; wilts after 2.5 s of sad ── */}
-      <GrassLayer wiltState={wiltState} />
+      {/* ── Grass ── */}
+      {theme === 'soft'
+        ? <GrassLayer wiltState={wiltState} />
+        : <PixelGrassLayer wiltState={wiltState} />}
 
-      {/* ── Tulips — bloom while any face is happy ── */}
-      <TulipLayer count={tulipCount} />
+      {/* ── Flowers ── */}
+      {theme === 'soft'
+        ? <TulipLayer count={tulipCount} />
+        : <PixelFlowerLayer count={tulipCount} />}
 
       {/* ── Bird — flutters across when both faces are happy ── */}
       <BirdLayer active={
@@ -579,6 +645,53 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
         faces[0].emotion === 'happy' &&
         faces[1].emotion === 'happy'
       } />
+
+      {/* ── Pixel transition overlay ── */}
+      <PixelTransition trigger={transitionTrigger} />
+
+      {/* ── Theme switcher ── */}
+      <div style={{
+        position:  'absolute',
+        bottom:    14,
+        left:      '50%',
+        transform: 'translateX(-50%)',
+        display:   'flex',
+        gap:       8,
+        zIndex:    10,
+      }}>
+        {(['soft', 'pixel', '—'] as const).map(t => {
+          const isActive = t === theme;
+          const isPlaceholder = t === '—';
+          return (
+            <button
+              key={t}
+              onClick={!isPlaceholder ? () => changeTheme(t as Theme) : undefined}
+              style={{
+                fontFamily:  '"Space Mono", monospace',
+                fontSize:    10,
+                letterSpacing: '0.06em',
+                padding:     '4px 11px',
+                background:  'transparent',
+                border:      `${isActive ? 1.8 : 1.2}px solid ${
+                  isDark
+                    ? (isActive ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.28)')
+                    : (isActive ? 'rgba(0,0,0,0.58)'       : 'rgba(0,0,0,0.22)')
+                }`,
+                borderRadius: theme === 'pixel' ? 0 : 3,
+                color: isDark
+                  ? (isActive ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.40)')
+                  : (isActive ? 'rgba(0,0,0,0.65)'       : 'rgba(0,0,0,0.35)'),
+                cursor:     isPlaceholder ? 'default' : 'pointer',
+                fontWeight: isActive ? 700 : 400,
+                transition: 'border-color 0.25s, color 0.25s, font-weight 0.25s',
+                userSelect: 'none',
+              }}
+            >
+              {t === 'soft' ? 'Soft' : t === 'pixel' ? 'Pixel' : '—'}
+            </button>
+          );
+        })}
+      </div>
 
       {/* ── Temp debug badge — remove once wilt is confirmed working ── */}
       <div style={{
