@@ -14,9 +14,9 @@ function PixelFlowerSVG({ kind, scale }: { kind: number; scale: number }) {
   const center  = CENTER_COLORS[kind] ?? '#FFFFFF';
   const outline = DARK_OUTLINE[kind]  ?? '#222222';
 
-  // Display size scaled by depth
-  const w = Math.round(20 * scale);
-  const h = Math.round(40 * scale);
+  // Display size scaled by depth — 100×200px at full scale (5× original)
+  const w = Math.round(100 * scale);
+  const h = Math.round(200 * scale);
 
   return (
     <svg
@@ -99,7 +99,7 @@ function PixelFlower({
   const prevVisible     = useRef(false);
   const timerRef        = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const flowerW = Math.round(20 * scale);
+  const flowerW = Math.round(100 * scale);
 
   useEffect(() => {
     if (visible && !prevVisible.current) {
