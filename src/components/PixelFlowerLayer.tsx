@@ -14,19 +14,29 @@ const CENTER_COLORS = ['#FFFFFF', '#FFDD00', '#FFDD00', '#FF8800', '#FFFFFF'];
 const DARK_OUTLINE  = ['#1144AA', '#AA1111', '#AAAAAA', '#AA7700', '#551188'];
 
 // ── PixelFlowerSVG ────────────────────────────────────────────────────────────
-// viewBox "0 0 5 10" — 5 units wide, 10 tall.
-// Display size: 200×400px at depth-4 scale (double of previous 100×200).
-// Each rect gets a staggered pix-pop animation so the flower builds
-// block-by-block from the stem up to the centre.
+// viewBox "0 0 9 18" — 9 units wide, 18 tall (each unit = 20 px at scale 1).
+// Display size: 180×360 px at depth-4 scale (10% shorter than before).
+//
+// Flower head layout (rows 0–6):
+//   Row 0: . . . . P . . . .   ← top petal
+//   Row 1: . . P . . . P . .   ← upper diagonals
+//   Row 2: . P . . C . . P .   ← upper sides + center top
+//   Row 3: P . . C C C . . P   ← outer sides + 3-wide center
+//   Row 4: . P . . C . . P .   ← lower sides + center bottom
+//   Row 5: . . P . . . P . .   ← lower diagonals
+//   Row 6: . . . . P . . . .   ← bottom petal
+// Stem (rows 7–17): col 4, width 1 (half the old stem width)
+// Leaves: right (6,10), left (2,13)
+//
+// Blocks pop in bottom-up, stem → leaves → petals outside-in → centre last.
 function PixelFlowerSVG({ kind, scale }: { kind: number; scale: number }) {
   const petal   = PETAL_COLORS[kind]  ?? '#4488FF';
   const center  = CENTER_COLORS[kind] ?? '#FFFFFF';
   const outline = DARK_OUTLINE[kind]  ?? '#222222';
 
-  const w = Math.round(200 * scale);
-  const h = Math.round(400 * scale);
+  const w = Math.round(180 * scale);
+  const h = Math.round(360 * scale);
 
-  // Helper: inline style for each rect — snaps in at its delay (steps timing = instant)
   const pop = (delay: number): React.CSSProperties => ({
     animation: `pix-pop 0.04s steps(1, end) ${delay.toFixed(2)}s both`,
   });
@@ -34,38 +44,56 @@ function PixelFlowerSVG({ kind, scale }: { kind: number; scale: number }) {
   return (
     <svg
       width={w} height={h}
-      viewBox="0 0 5 10"
+      viewBox="0 0 9 18"
       shapeRendering="crispEdges"
       style={{ display: 'block', imageRendering: 'pixelated' }}
     >
-      {/* ── 1. Stem (appears first) ── */}
-      <rect x="2" y="3" width="1" height="7" fill="#228B22" style={pop(0.00)} />
+      {/* ── 1. Stem — thin (1/9 width ≈ half the old 1/5) ── */}
+      <rect x="4" y="7" width="1" height="11" fill="#228B22" style={pop(0.00)} />
 
-      {/* ── 2. Leaves (bottom leaf first) ── */}
-      <rect x="3" y="7" width="1" height="1" fill="#44AA33" style={pop(0.07)} />
-      <rect x="1" y="5" width="1" height="1" fill="#44AA33" style={pop(0.14)} />
+      {/* ── 2. Leaves ── */}
+      <rect x="6" y="10" width="1" height="1" fill="#44AA33" style={pop(0.07)} />
+      <rect x="2" y="13" width="1" height="1" fill="#44AA33" style={pop(0.14)} />
 
-      {/* ── 3. Bottom petals ── */}
-      <rect x="1" y="3" width="1" height="1" fill={petal}                          style={pop(0.21)} />
-      <rect x="3" y="3" width="1" height="1" fill={petal}                          style={pop(0.28)} />
-      <rect x="2" y="3" width="1" height="1" fill={hexToRgba(outline, 0.25)}       style={pop(0.21)} />
+      {/* ── 3. Bottom petal ── */}
+      <rect x="4" y="6" width="1" height="1" fill={petal}                        style={pop(0.21)} />
 
-      {/* ── 4. Side petals ── */}
-      <rect x="0" y="2" width="2" height="1" fill={petal}                          style={pop(0.35)} />
-      <rect x="3" y="2" width="2" height="1" fill={petal}                          style={pop(0.42)} />
-      <rect x="0" y="2" width="1" height="1" fill={hexToRgba(outline, 0.35)}       style={pop(0.35)} />
-      <rect x="4" y="2" width="1" height="1" fill={hexToRgba(outline, 0.35)}       style={pop(0.42)} />
+      {/* ── 4. Lower diagonal petals ── */}
+      <rect x="2" y="5" width="1" height="1" fill={petal}                        style={pop(0.28)} />
+      <rect x="6" y="5" width="1" height="1" fill={petal}                        style={pop(0.28)} />
 
-      {/* ── 5. Upper-side petals ── */}
-      <rect x="1" y="1" width="1" height="1" fill={petal}                          style={pop(0.49)} />
-      <rect x="3" y="1" width="1" height="1" fill={petal}                          style={pop(0.56)} />
-      <rect x="2" y="1" width="1" height="1" fill={hexToRgba(outline, 0.35)}       style={pop(0.49)} />
+      {/* ── 5. Lower side petals ── */}
+      <rect x="1" y="4" width="1" height="1" fill={petal}                        style={pop(0.35)} />
+      <rect x="7" y="4" width="1" height="1" fill={petal}                        style={pop(0.35)} />
+      {/* subtle dark edge on outermost lower sides */}
+      <rect x="1" y="4" width="1" height="1" fill={hexToRgba(outline, 0.20)}    style={pop(0.35)} />
+      <rect x="7" y="4" width="1" height="1" fill={hexToRgba(outline, 0.20)}    style={pop(0.35)} />
 
-      {/* ── 6. Top petal ── */}
-      <rect x="2" y="0" width="1" height="1" fill={petal}                          style={pop(0.63)} />
+      {/* ── 6. Outer side petals ── */}
+      <rect x="0" y="3" width="1" height="1" fill={petal}                        style={pop(0.42)} />
+      <rect x="8" y="3" width="1" height="1" fill={petal}                        style={pop(0.42)} />
+      <rect x="0" y="3" width="1" height="1" fill={hexToRgba(outline, 0.30)}    style={pop(0.42)} />
+      <rect x="8" y="3" width="1" height="1" fill={hexToRgba(outline, 0.30)}    style={pop(0.42)} />
 
-      {/* ── 7. Centre (last, on top of everything) ── */}
-      <rect x="2" y="1" width="1" height="2" fill={center}                         style={pop(0.70)} />
+      {/* ── 7. Upper side petals ── */}
+      <rect x="1" y="2" width="1" height="1" fill={petal}                        style={pop(0.49)} />
+      <rect x="7" y="2" width="1" height="1" fill={petal}                        style={pop(0.49)} />
+      <rect x="1" y="2" width="1" height="1" fill={hexToRgba(outline, 0.20)}    style={pop(0.49)} />
+      <rect x="7" y="2" width="1" height="1" fill={hexToRgba(outline, 0.20)}    style={pop(0.49)} />
+
+      {/* ── 8. Upper diagonal petals ── */}
+      <rect x="2" y="1" width="1" height="1" fill={petal}                        style={pop(0.56)} />
+      <rect x="6" y="1" width="1" height="1" fill={petal}                        style={pop(0.56)} />
+
+      {/* ── 9. Top petal ── */}
+      <rect x="4" y="0" width="1" height="1" fill={petal}                        style={pop(0.63)} />
+
+      {/* ── 10. Centre — + shaped, blooms last ── */}
+      <rect x="4" y="4" width="1" height="1" fill={center}                       style={pop(0.70)} />
+      <rect x="3" y="3" width="1" height="1" fill={center}                       style={pop(0.77)} />
+      <rect x="5" y="3" width="1" height="1" fill={center}                       style={pop(0.77)} />
+      <rect x="4" y="3" width="1" height="1" fill={center}                       style={pop(0.84)} />
+      <rect x="4" y="2" width="1" height="1" fill={center}                       style={pop(0.91)} />
     </svg>
   );
 }
@@ -116,7 +144,7 @@ function PixelFlower({
   const prevVisible     = useRef(false);
   const timerRef        = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const flowerW = Math.round(200 * scale);
+  const flowerW = Math.round(180 * scale);
 
   useEffect(() => {
     if (visible && !prevVisible.current) {
