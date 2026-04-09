@@ -8,7 +8,7 @@ function BirdSVG({ flipped }: { flipped: boolean }) {
     <div style={{ display: 'inline-block', transform: flipped ? 'scaleX(-1)' : undefined }}>
       {/* Inner wrapper carries the bobbing animation (translateY) */}
       <div style={{ display: 'inline-block', animation: 'bird-bob 1.5s ease-in-out infinite' }}>
-        <svg width="40" height="26" viewBox="0 0 40 26" fill="none">
+        <svg width="44" height="29" viewBox="0 0 40 26" fill="none">
           {/* tail */}
           <path d="M9 15 L1 11 L3 18 Z" fill="#3A78C2" opacity="0.85" />
           {/* body */}
@@ -57,7 +57,7 @@ export function BirdLayer({ active }: { active: boolean }) {
     setPass({
       id:        idRef.current,
       direction: Math.random() > 0.5 ? 'ltr' : 'rtl',
-      topPct:    Math.random() * 32 + 8, // 8 % – 40 % from top
+      topPct:    45, // middle of the screen
     });
   };
 
