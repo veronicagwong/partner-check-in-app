@@ -38,7 +38,7 @@ export function PixelGrassLayer({ wiltState }: { wiltState: WiltState }) {
         left:            0,
         right:           0,
         height:          8,
-        backgroundImage: 'repeating-linear-gradient(90deg, #55DD44 0px, #55DD44 8px, transparent 8px, transparent 16px)',
+        backgroundImage: 'repeating-linear-gradient(90deg, #5A8A2C 0px, #5A8A2C 8px, transparent 8px, transparent 16px)',
         imageRendering:  'pixelated',
       }} />
 
@@ -49,7 +49,7 @@ export function PixelGrassLayer({ wiltState }: { wiltState: WiltState }) {
         left:       0,
         right:      0,
         height:     5,
-        background: '#2A7A22',
+        background: '#2E5518',
       }} />
 
       {/* ── Main ground body ── */}
@@ -59,7 +59,7 @@ export function PixelGrassLayer({ wiltState }: { wiltState: WiltState }) {
         left:       0,
         right:      0,
         bottom:     0,
-        background: '#3DAA3D',
+        background: '#3D7020',
       }} />
 
     </div>
