@@ -21,8 +21,8 @@ export function PixelGrassLayer({ wiltState }: { wiltState: WiltState }) {
     <div style={{
       position:      'absolute',
       bottom:        0,
-      left:          '12%',
-      right:         '12%',
+      left:          '20%',
+      right:         '20%',
       bottom:        '28%',
       height:        '11%',
       pointerEvents: 'none',
