@@ -10,8 +10,8 @@ const LEAF  = '#5A8A2C';
 
 // ── SVG dimensions (always rendered at full size; CSS scale handles depth) ────
 const SVG_W = 180;   // px
-const SVG_H = 280;   // px  (14 units × 20 px — shorter stem keeps head in viewport)
-// viewBox "0 0 9 14" → each unit = 20 px
+const SVG_H = 360;   // px
+// viewBox "0 0 9 18" → each unit = 20 px
 
 // ── Per-kind flower head geometry ─────────────────────────────────────────────
 // Head occupies rows 0–6 (y 0–6).  Stem: x=4, y=6→18 (thin).
@@ -110,16 +110,16 @@ function PixelFlowerSVG({ kind }: { kind: number }) {
   return (
     <svg
       width={SVG_W} height={SVG_H}
-      viewBox="0 0 9 14"
+      viewBox="0 0 9 18"
       shapeRendering="crispEdges"
       style={{ display: 'block', imageRendering: 'pixelated' }}
     >
-      {/* ── Stem: thin (1/9 width), y=6→14 ── */}
-      <rect x="4" y="6" width="1" height="8" fill={STEM} style={pop(0.00)} />
+      {/* ── Stem: thin (1/9 width), y=6→18 ── */}
+      <rect x="4" y="6" width="1" height="12" fill={STEM} style={pop(0.00)} />
 
       {/* ── Leaves ── */}
-      <rect x="6" y="9"  width="1" height="1" fill={LEAF} style={pop(0.07)} />
-      <rect x="2" y="11" width="1" height="1" fill={LEAF} style={pop(0.14)} />
+      <rect x="6" y="10" width="1" height="1" fill={LEAF} style={pop(0.07)} />
+      <rect x="2" y="13" width="1" height="1" fill={LEAF} style={pop(0.14)} />
 
       {/* ── Flower head — pops in bottom-row-first (rowDelay) ── */}
       {headRects.map((rect, i) => (
