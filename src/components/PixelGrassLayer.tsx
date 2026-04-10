@@ -23,7 +23,7 @@ export function PixelGrassLayer({ wiltState }: { wiltState: WiltState }) {
       bottom:        0,
       left:          '12%',
       right:         '12%',
-      bottom:        '6%',
+      bottom:        '28%',
       height:        '11%',
       pointerEvents: 'none',
       zIndex:        2,
