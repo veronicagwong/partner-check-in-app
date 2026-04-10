@@ -167,7 +167,7 @@ export function PixelFlowerLayer({ count }: { count: number }) {
       {depths.map(d => (
         <div key={d} style={{
           position:      'absolute',
-          bottom:        '28%',
+          bottom:        '17%',
           left:          0,
           right:         0,
           height:        0,
