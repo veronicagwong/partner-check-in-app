@@ -43,8 +43,8 @@ function GrassBladesRow() {
         const x = i * 8;
         const y = 48 - b.height; // bottom-align
         // Tall blades get a lighter tip block for depth
-        const tipColor  = b.height === 48 ? '#8ABF4A' : '#6AAA38';
-        const bodyColor = '#6AAA38';
+        const tipColor  = b.height === 48 ? '#77EE55' : '#55DD44';
+        const bodyColor = '#55DD44';
 
         return (
           <g key={i}>
@@ -95,7 +95,7 @@ export function PixelGrassLayer({ wiltState }: { wiltState: WiltState }) {
         left:       0,
         right:      0,
         height:     5,
-        background: '#3D6820',
+        background: '#2A7A22',
       }} />
 
       {/* ── Main ground body ── */}
@@ -105,7 +105,7 @@ export function PixelGrassLayer({ wiltState }: { wiltState: WiltState }) {
         left:       0,
         right:      0,
         bottom:     0,
-        background: '#508432',
+        background: '#3DAA3D',
       }} />
 
     </div>
