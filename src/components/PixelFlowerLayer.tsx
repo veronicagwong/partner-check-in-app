@@ -8,61 +8,17 @@ const CENTER_COLORS  = ['#FFDD00', '#FFDD00', '#FFDD00', '#FF8800', '#CC99FF'] a
 const STEM  = '#3D7020';
 const LEAF  = '#5A8A2C';
 
+// ── SVG dimensions (always rendered at full size; CSS scale handles depth) ────
+const SVG_W = 180;   // px
+const SVG_H = 360;   // px
+// viewBox "0 0 9 18" → each unit = 20 px
+
 // ── Per-kind flower head geometry ─────────────────────────────────────────────
-//
-// viewBox "0 0 9 18".  Flower head occupies rows 0–6 (row 6 = stem connection).
-// Stem: x=4, y=6, width=1, height=12 (thin — 1/9 of width).
-// Leaves at (6,10) and (2,13).
-//
-//  kind 0 — Blue daisy (round filled)
-//    Row 0:   ..PPPPP..
-//    Row 1:   .PPPPPPP.
-//    Row 2:   PPP|CC|PPP   cols 0-2 petal, 3-5 centre, 6-8 petal
-//    Row 3:   PPP|CC|PPP
-//    Row 4:   .PPPPPPP.
-//    Row 5:   ..PPPPP..
-//    Row 6:   ....P....   connector to stem
-//
-//  kind 1 — Red tulip (cup with two horn tips)
-//    Row 0:   .P.....P.
-//    Row 1:   PPP...PPP
-//    Row 2:   PPPPPPPPP
-//    Row 3:   .PPPPPPP.
-//    Row 4:   ..PPPPP..
-//    Row 5:   ...PPP...
-//    Row 6:   ....P....
-//
-//  kind 2 — White thin-petal daisy (8 spokes + + centre)
-//    Row 0:   ....P....
-//    Row 1:   ..P...P..
-//    Row 2:   .P..(c)..P.
-//    Row 3:   P..(ccc)..P
-//    Row 4:   .P..(c)..P.
-//    Row 5:   ..P...P..
-//    Row 6:   ....P....
-//
-//  kind 3 — Yellow sunflower (ring petals + large orange centre)
-//    Row 0:   ..P.P.P..
-//    Row 1:   .P.....P.
-//    Row 2:   P.[CCCCC].P  cols 0,8 petal; 2-6 centre
-//    Row 3:   P.[CCCCC].P
-//    Row 4:   P.[CCCCC].P
-//    Row 5:   .P.....P.
-//    Row 6:   ..P.P.P..
-//
-//  kind 4 — Purple hyacinth (diamond oval, checkerboard light/dark)
-//    Row 0:   ....P....
-//    Row 1:   ...PPP...
-//    Row 2:   ..PPPPP..   (alternating shades)
-//    Row 3:   .PPPPPPP.
-//    Row 4:   ..PPPPP..
-//    Row 5:   ...PPP...
-//    Row 6:   ....P....
+// Head occupies rows 0–6 (y 0–6).  Stem: x=4, y=6→18 (thin).
+// rowDelay: bottom-up — row 6 pops at 0.21 s, row 0 at 0.63 s.
+const rowDelay = (y: number) => 0.21 + (6 - y) * 0.07;
 
 type Rect = { x: number; y: number; fill: string; delay: number };
-
-// bottom-up: row 6 → 0.21 s, row 5 → 0.28 s, … row 0 → 0.63 s
-const rowDelay = (y: number) => 0.21 + (6 - y) * 0.07;
 
 function buildHead(kind: number): Rect[] {
   const p = PETAL_COLORS[kind];
@@ -72,58 +28,59 @@ function buildHead(kind: number): Rect[] {
     rects.push({ x, y, fill, delay: rowDelay(y) });
 
   switch (kind) {
-    case 0: { // round daisy
-      for (let x = 2; x <= 6; x++) r(x, 0, p);
+
+    case 0: { // ── Blue round daisy ─────────────────────────────────────────
+      for (let x = 2; x <= 6; x++) r(x, 0, p);            // top arc
       for (let x = 1; x <= 7; x++) r(x, 1, p);
-      for (const x of [0,1,2,6,7,8]) r(x, 2, p);
-      for (const x of [3,4,5])       r(x, 2, c);
+      for (const x of [0,1,2,6,7,8]) r(x, 2, p);          // sides
+      for (const x of [3,4,5])       r(x, 2, c);          // centre
       for (const x of [0,1,2,6,7,8]) r(x, 3, p);
       for (const x of [3,4,5])       r(x, 3, c);
       for (let x = 1; x <= 7; x++) r(x, 4, p);
-      for (let x = 2; x <= 6; x++) r(x, 5, p);
-      r(4, 6, p); // connector
+      for (let x = 2; x <= 6; x++) r(x, 5, p);            // bottom arc
+      r(4, 6, p);                                          // connector
       break;
     }
 
-    case 1: { // tulip
-      r(1, 0, p); r(7, 0, p);                         // horn tips
-      for (const x of [0,1,2,6,7,8]) r(x, 1, p);     // top edges (gap in middle)
-      for (let x = 0; x <= 8; x++) r(x, 2, p);        // widest
+    case 1: { // ── Red tulip (cup with two horn tips) ───────────────────────
+      r(1, 0, p); r(7, 0, p);                              // horn tips
+      for (const x of [0,1,2,6,7,8]) r(x, 1, p);          // top rim (gap in middle)
+      for (let x = 0; x <= 8; x++) r(x, 2, p);            // widest row
       for (let x = 1; x <= 7; x++) r(x, 3, p);
       for (let x = 2; x <= 6; x++) r(x, 4, p);
-      for (const x of [3,4,5])     r(x, 5, p);
-      r(4, 6, p);
+      for (const x of [3,4,5])     r(x, 5, p);            // base
+      r(4, 6, p);                                          // connector
       break;
     }
 
-    case 2: { // thin-petal daisy
-      r(4, 0, p);
-      r(2, 1, p); r(6, 1, p);
-      r(1, 2, p); r(7, 2, p); r(4, 2, c);             // side spokes + top centre
-      r(0, 3, p); r(8, 3, p);                          // outer spokes
-      r(3, 3, c); r(4, 3, c); r(5, 3, c);             // centre row
-      r(1, 4, p); r(7, 4, p); r(4, 4, c);             // side spokes + bottom centre
-      r(2, 5, p); r(6, 5, p);
-      r(4, 6, p);
+    case 2: { // ── White thin-petal daisy (8 spokes + centre) ───────────────
+      r(4, 0, p);                                          // top spoke
+      r(2, 1, p); r(6, 1, p);                              // upper diagonals
+      r(1, 2, p); r(7, 2, p); r(4, 2, c);                 // side spokes + centre top
+      r(0, 3, p); r(8, 3, p);                              // outer side spokes
+      r(3, 3, c); r(4, 3, c); r(5, 3, c);                 // centre row
+      r(1, 4, p); r(7, 4, p); r(4, 4, c);                 // side spokes + centre bottom
+      r(2, 5, p); r(6, 5, p);                              // lower diagonals
+      r(4, 6, p);                                          // bottom spoke / connector
       break;
     }
 
-    case 3: { // sunflower
-      for (const x of [2,4,6]) r(x, 0, p);            // 3 top petals
-      r(1, 1, p); r(7, 1, p);                          // side petals
-      r(0, 2, p); r(8, 2, p);                          // outer sides
+    case 3: { // ── Yellow sunflower (ring petals + large orange centre) ──────
+      for (const x of [2,4,6]) r(x, 0, p);                // 3 top petals
+      r(1, 1, p); r(7, 1, p);                              // upper sides
+      r(0, 2, p); r(8, 2, p);                              // outer sides
       r(0, 3, p); r(8, 3, p);
       r(0, 4, p); r(8, 4, p);
-      r(1, 5, p); r(7, 5, p);
-      for (const x of [2,4,6]) r(x, 6, p);            // 3 bottom petals
-      // large centre block 5 wide × 3 tall
+      r(1, 5, p); r(7, 5, p);                              // lower sides
+      for (const x of [2,4,6]) r(x, 6, p);                // 3 bottom petals / connector
+      // 5×3 orange centre block
       for (let y = 2; y <= 4; y++)
         for (let x = 2; x <= 6; x++)
           r(x, y, c);
       break;
     }
 
-    case 4: { // hyacinth — diamond shape, light/dark checkerboard
+    case 4: { // ── Purple hyacinth (diamond oval, checkerboard) ─────────────
       const light = c;   // '#CC99FF'
       const dark  = p;   // '#8844EE'
       const cell  = (x: number, y: number) => ((x + y) % 2 === 0 ? dark : light);
@@ -133,7 +90,7 @@ function buildHead(kind: number): Rect[] {
       for (let x = 1; x <= 7; x++) r(x, 3, cell(x, 3));
       for (let x = 2; x <= 6; x++) r(x, 4, cell(x, 4));
       for (const x of [3,4,5])     r(x, 5, cell(x, 5));
-      r(4, 6, cell(4, 6));
+      r(4, 6, cell(4, 6));                                 // connector
       break;
     }
   }
@@ -141,11 +98,10 @@ function buildHead(kind: number): Rect[] {
   return rects;
 }
 
-// ── PixelFlowerSVG ────────────────────────────────────────────────────────────
-function PixelFlowerSVG({ kind, scale }: { kind: number; scale: number }) {
+// ── PixelFlowerSVG ─────────────────────────────────────────────────────────────
+// Always rendered at SVG_W × SVG_H (scale is applied by the outer CSS wrapper).
+function PixelFlowerSVG({ kind }: { kind: number }) {
   const headRects = buildHead(kind);
-  const w = Math.round(180 * scale);
-  const h = Math.round(360 * scale);
 
   const pop = (delay: number): React.CSSProperties => ({
     animation: `pix-pop 0.04s steps(1, end) ${delay.toFixed(2)}s both`,
@@ -153,19 +109,19 @@ function PixelFlowerSVG({ kind, scale }: { kind: number; scale: number }) {
 
   return (
     <svg
-      width={w} height={h}
+      width={SVG_W} height={SVG_H}
       viewBox="0 0 9 18"
       shapeRendering="crispEdges"
       style={{ display: 'block', imageRendering: 'pixelated' }}
     >
-      {/* ── Stem (thin: 1/9 of width) ── */}
+      {/* ── Stem: thin (1/9 width), y=6→18 ── */}
       <rect x="4" y="6" width="1" height="12" fill={STEM} style={pop(0.00)} />
 
       {/* ── Leaves ── */}
       <rect x="6" y="10" width="1" height="1" fill={LEAF} style={pop(0.07)} />
       <rect x="2" y="13" width="1" height="1" fill={LEAF} style={pop(0.14)} />
 
-      {/* ── Flower head — pops in bottom-up ── */}
+      {/* ── Flower head — pops in bottom-row-first (rowDelay) ── */}
       {headRects.map((rect, i) => (
         <rect
           key={i}
@@ -203,7 +159,8 @@ const PIX_SLOTS = [
   { xPct: 24, depth: 2 as const, kind: 2, stagger: 440 },
 ];
 
-const PIX_SCALE: Record<1|2|3|4, number> = { 1: 0.55, 2: 0.70, 3: 0.85, 4: 1.00 };
+// Depth scale — CSS transform only, not baked into SVG dimensions
+const PIX_SCALE: Record<1|2|3|4, number> = { 1: 0.45, 2: 0.60, 3: 0.78, 4: 1.00 };
 const PIX_INDICES = Array.from({ length: PIX_SLOTS.length }, (_, i) => i);
 
 function shuffled(arr: number[]): number[] {
@@ -216,6 +173,10 @@ function shuffled(arr: number[]): number[] {
 }
 
 // ── Single flower slot ────────────────────────────────────────────────────────
+// Mirrors TulipLayer's two-layer pattern:
+//   outer div  — handles position + show/hide (scale 0→1, opacity)
+//   inner div  — handles depth perspective scale (CSS transform only)
+//   SVG        — always full SVG_W × SVG_H; pix-pop builds block-by-block
 function PixelFlower({
   visible, xPct, stagger, kind, scale,
 }: {
@@ -225,8 +186,6 @@ function PixelFlower({
   const prevVisible     = useRef(false);
   const timerRef        = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const flowerW = Math.round(180 * scale);
-
   useEffect(() => {
     if (visible && !prevVisible.current) {
       if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
@@ -234,7 +193,7 @@ function PixelFlower({
     }
     if (!visible && prevVisible.current) {
       if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
-      timerRef.current = setTimeout(() => { setGen(0); timerRef.current = null; }, 400);
+      timerRef.current = setTimeout(() => { setGen(0); timerRef.current = null; }, 500);
     }
     prevVisible.current = visible;
   }, [visible, stagger]);
@@ -242,18 +201,31 @@ function PixelFlower({
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
   return (
+    // Outer: position anchor + show/hide (scale 0↔1 + opacity, same as TulipLayer)
     <div style={{
       position:        'absolute',
       bottom:          0,
-      left:            `calc(${xPct}% - ${flowerW / 2}px)`,
+      left:            `calc(${xPct}% - ${SVG_W / 2}px)`,
+      width:           SVG_W,
+      height:          SVG_H,
       opacity:         visible ? 1 : 0,
-      transform:       visible ? 'scaleY(1)' : 'scaleY(0)',
+      transform:       visible ? 'scale(1)' : 'scale(0)',
       transformOrigin: 'bottom center',
-      transition:      visible ? 'none' : 'opacity 0.35s ease, transform 0.35s ease-in',
+      transition:      visible
+        ? 'none'
+        : 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.4, 0, 0.8, 0.2)',
       pointerEvents:   'none',
-      imageRendering:  'pixelated',
     }}>
-      {gen > 0 && <PixelFlowerSVG key={gen} kind={kind} scale={scale} />}
+      {/* Inner: depth perspective scale — CSS only, never conflicts with pix-pop */}
+      <div style={{
+        width:           SVG_W,
+        height:          SVG_H,
+        transformOrigin: 'bottom center',
+        transform:       `scale(${scale})`,
+        imageRendering:  'pixelated',
+      }}>
+        {gen > 0 && <PixelFlowerSVG key={gen} kind={kind} />}
+      </div>
     </div>
   );
 }
@@ -274,8 +246,14 @@ export function PixelFlowerLayer({ count }: { count: number }) {
     <>
       {depths.map(d => (
         <div key={d} style={{
-          position: 'absolute', bottom: '28%', left: 0, right: 0,
-          height: 0, overflow: 'visible', pointerEvents: 'none', zIndex: d,
+          position:      'absolute',
+          bottom:        '28%',
+          left:          0,
+          right:         0,
+          height:        0,
+          overflow:      'visible',
+          pointerEvents: 'none',
+          zIndex:        d,
         }}>
           {order.map((slotIdx, displayPos) => {
             const s = PIX_SLOTS[slotIdx];
