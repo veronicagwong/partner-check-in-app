@@ -1,83 +1,154 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-// ── Pixel flower definitions ───────────────────────────────────────────────────
-// Each flower is a tiny SVG (viewBox 0 0 5 10, display 20×40px).
-// shape-rendering="crispEdges" keeps everything sharp with no anti-aliasing.
-// 5 colour types: blue, red, white, yellow, purple.
+// ── Palette ───────────────────────────────────────────────────────────────────
+// kind: 0=blue daisy  1=red tulip  2=white daisy  3=yellow sunflower  4=purple hyacinth
+const STEM = '#3D7020';
+const LEAF = '#5A8A2C';
 
-const PETAL_COLORS  = ['#4488FF', '#FF4444', '#EEEEEE', '#FFDD00', '#8844EE'];
-const CENTER_COLORS = ['#FFFFFF', '#FFDD00', '#FFDD00', '#FF8800', '#FFFFFF'];
-const DARK_OUTLINE  = ['#1144AA', '#AA1111', '#AAAAAA', '#AA7700', '#551188'];
+// ── SVG base dimensions (depth scale applied via CSS, never baked in) ─────────
+// viewBox "0 0 9 14" → 10px per unit at 90×140px
+const SVG_W = 90;
+const SVG_H = 140;
 
-function PixelFlowerSVG({ kind, scale }: { kind: number; scale: number }) {
-  const petal   = PETAL_COLORS[kind]  ?? '#4488FF';
-  const center  = CENTER_COLORS[kind] ?? '#FFFFFF';
-  const outline = DARK_OUTLINE[kind]  ?? '#222222';
+// ── Flower head pixel grids ───────────────────────────────────────────────────
+// Head occupies rows 0–6 (cols 0–8, center col 4).
+// Stem: x=4, y=7, width=0.5, height=7.  Leaves at (6,9) and (2,11).
 
-  // Display size scaled by depth (5× base size: 100×200px at depth 4)
-  const w = Math.round(100 * scale);
-  const h = Math.round(200 * scale);
+type Cell = { x: number; y: number; fill: string };
+
+function buildHead(kind: number): Cell[] {
+  const cells: Cell[] = [];
+  const c = (x: number, y: number, fill: string) => cells.push({ x, y, fill });
+
+  switch (kind) {
+
+    case 0: { // ── Blue round daisy ─────────────────────────────────────────
+      // Ring of petals + 3×2 yellow centre
+      const P = '#4488FF', C = '#FFDD00';
+      // top + bottom arcs
+      for (let x = 2; x <= 6; x++) { c(x, 0, P); c(x, 5, P); }
+      // left + right sides
+      for (let y = 1; y <= 4; y++) { c(0, y, P); c(8, y, P); }
+      // inner ring fill
+      for (let y = 1; y <= 4; y++) { c(1, y, P); c(7, y, P); }
+      for (let x = 2; x <= 6; x++) { c(x, 1, P); c(x, 4, P); }
+      // centre 3×2 block
+      for (let x = 3; x <= 5; x++) { c(x, 2, C); c(x, 3, C); }
+      // connector
+      c(4, 6, P);
+      break;
+    }
+
+    case 1: { // ── Red tulip ────────────────────────────────────────────────
+      const P = '#DD3333';
+      c(1, 0, P); c(7, 0, P);                              // horn tips
+      c(0, 1, P); c(1, 1, P); c(7, 1, P); c(8, 1, P);    // top rim
+      for (let x = 0; x <= 8; x++) c(x, 2, P);            // widest row
+      for (let x = 1; x <= 7; x++) c(x, 3, P);
+      for (let x = 2; x <= 6; x++) c(x, 4, P);
+      for (let x = 3; x <= 5; x++) c(x, 5, P);
+      c(4, 6, P);
+      break;
+    }
+
+    case 2: { // ── White thin daisy (8 spokes, pale yellow centre) ──────────
+      const P = '#E8E8E8', C = '#FFE566';
+      c(4, 0, P);                                           // top spoke
+      c(2, 1, P); c(6, 1, P);                              // upper diagonals
+      c(1, 2, P); c(7, 2, P); c(4, 2, C);                 // side spokes + centre
+      c(0, 3, P); c(8, 3, P);                              // outer side spokes
+      c(3, 3, C); c(4, 3, C); c(5, 3, C);                 // centre row
+      c(1, 4, P); c(7, 4, P); c(4, 4, C);                 // side spokes + centre
+      c(2, 5, P); c(6, 5, P);                              // lower diagonals
+      c(4, 6, P);                                          // bottom spoke / connector
+      break;
+    }
+
+    case 3: { // ── Yellow sunflower ─────────────────────────────────────────
+      const P = '#FFCC00', C = '#FF8800';
+      c(2, 0, P); c(4, 0, P); c(6, 0, P);                 // top 3 petals
+      c(1, 1, P); c(7, 1, P);                              // upper sides
+      c(0, 2, P); c(8, 2, P);                              // outer sides
+      c(0, 3, P); c(8, 3, P);
+      c(0, 4, P); c(8, 4, P);
+      c(1, 5, P); c(7, 5, P);                              // lower sides
+      c(2, 6, P); c(4, 6, P); c(6, 6, P);                 // bottom 3 petals / connector
+      // 5×3 orange centre
+      for (let y = 2; y <= 4; y++)
+        for (let x = 2; x <= 6; x++) c(x, y, C);
+      break;
+    }
+
+    case 4: { // ── Purple hyacinth (diamond checkerboard) ───────────────────
+      const D = '#8844EE', L = '#CC99FF';
+      const cell = (x: number, y: number) => ((x + y) % 2 === 0 ? D : L);
+      c(4, 0, cell(4, 0));
+      for (const x of [3,4,5])     c(x, 1, cell(x, 1));
+      for (let x = 2; x <= 6; x++) c(x, 2, cell(x, 2));
+      for (let x = 1; x <= 7; x++) c(x, 3, cell(x, 3));
+      for (let x = 2; x <= 6; x++) c(x, 4, cell(x, 4));
+      for (const x of [3,4,5])     c(x, 5, cell(x, 5));
+      c(4, 6, cell(4, 6));
+      break;
+    }
+  }
+
+  return cells;
+}
+
+// ── PixelFlowerSVG ─────────────────────────────────────────────────────────────
+// Always renders at SVG_W × SVG_H — depth scale is applied by the outer CSS wrapper.
+function PixelFlowerSVG({ kind }: { kind: number }) {
+  const head = buildHead(kind);
 
   return (
     <svg
-      width={w} height={h}
-      viewBox="0 0 5 10"
+      width={SVG_W} height={SVG_H}
+      viewBox="0 0 9 14"
       shapeRendering="crispEdges"
       style={{ display: 'block', imageRendering: 'pixelated' }}
     >
-      {/* ── Stem ── */}
-      <rect x="2.25" y="3" width="0.5" height="7" fill="#228B22" />
+      {/* ── Stem: thin (0.5 wide), rows 7–14 ── */}
+      <rect x="4.25" y="7" width="0.5" height="7" fill={STEM} />
+
       {/* ── Leaves ── */}
-      <rect x="1" y="5" width="1" height="1" fill="#44AA33" />
-      <rect x="3" y="7" width="1" height="1" fill="#44AA33" />
+      <rect x="6" y="9"  width="1" height="1" fill={LEAF} />
+      <rect x="2" y="11" width="1" height="1" fill={LEAF} />
 
-      {/* ── Petal outline (shadow) — 1px below / beside petals ── */}
-      <rect x="2" y="1" width="1" height="1" fill={outline} opacity="0.35" />
-      <rect x="0" y="2" width="1" height="1" fill={outline} opacity="0.35" />
-      <rect x="4" y="2" width="1" height="1" fill={outline} opacity="0.35" />
-      <rect x="2" y="3" width="1" height="1" fill={outline} opacity="0.25" />
-
-      {/* ── Petals (cross) ── */}
-      <rect x="2" y="0" width="1" height="1" fill={petal} />  {/* top    */}
-      <rect x="1" y="1" width="1" height="1" fill={petal} />  {/* top-L  */}
-      <rect x="3" y="1" width="1" height="1" fill={petal} />  {/* top-R  */}
-      <rect x="0" y="2" width="2" height="1" fill={petal} />  {/* left   */}
-      <rect x="3" y="2" width="2" height="1" fill={petal} />  {/* right  */}
-      <rect x="1" y="3" width="1" height="1" fill={petal} />  {/* btm-L  */}
-      <rect x="3" y="3" width="1" height="1" fill={petal} />  {/* btm-R  */}
-
-      {/* ── Centre ── */}
-      <rect x="2" y="1" width="1" height="2" fill={center} />
+      {/* ── Flower head ── */}
+      {head.map((cell, i) => (
+        <rect key={i} x={cell.x} y={cell.y} width="1" height="1" fill={cell.fill} />
+      ))}
     </svg>
   );
 }
 
-// ── Slot layout — same positions as TulipLayer, 20 slots ─────────────────────
+// ── Slot layout ───────────────────────────────────────────────────────────────
 const PIX_SLOTS = [
-  { xPct: 15, depth: 2 as const, kind: 0, stagger:   0 },
-  { xPct: 20, depth: 1 as const, kind: 1, stagger:  15 },
-  { xPct: 26, depth: 3 as const, kind: 2, stagger:  30 },
-  { xPct: 33, depth: 1 as const, kind: 3, stagger:  45 },
-  { xPct: 38, depth: 4 as const, kind: 4, stagger:  60 },
-  { xPct: 44, depth: 2 as const, kind: 0, stagger:  75 },
-  { xPct: 50, depth: 4 as const, kind: 2, stagger:  90 },
-  { xPct: 55, depth: 3 as const, kind: 1, stagger: 105 },
-  { xPct: 61, depth: 1 as const, kind: 3, stagger: 120 },
-  { xPct: 67, depth: 2 as const, kind: 4, stagger: 135 },
-  { xPct: 72, depth: 3 as const, kind: 0, stagger: 150 },
-  { xPct: 78, depth: 4 as const, kind: 1, stagger: 165 },
-  { xPct: 84, depth: 2 as const, kind: 2, stagger: 180 },
-  { xPct: 18, depth: 4 as const, kind: 3, stagger: 195 },
-  { xPct: 30, depth: 3 as const, kind: 4, stagger: 210 },
-  { xPct: 47, depth: 1 as const, kind: 1, stagger: 225 },
-  { xPct: 58, depth: 4 as const, kind: 0, stagger: 240 },
-  { xPct: 70, depth: 2 as const, kind: 3, stagger: 255 },
-  { xPct: 82, depth: 1 as const, kind: 4, stagger: 270 },
-  { xPct: 24, depth: 2 as const, kind: 2, stagger: 285 },
+  { xPct: 25, depth: 2 as const, kind: 0, stagger:   0 },
+  { xPct: 30, depth: 1 as const, kind: 1, stagger:  15 },
+  { xPct: 36, depth: 3 as const, kind: 2, stagger:  30 },
+  { xPct: 42, depth: 1 as const, kind: 3, stagger:  45 },
+  { xPct: 47, depth: 4 as const, kind: 4, stagger:  60 },
+  { xPct: 52, depth: 2 as const, kind: 0, stagger:  75 },
+  { xPct: 57, depth: 4 as const, kind: 2, stagger:  90 },
+  { xPct: 62, depth: 3 as const, kind: 1, stagger: 105 },
+  { xPct: 67, depth: 1 as const, kind: 3, stagger: 120 },
+  { xPct: 72, depth: 2 as const, kind: 4, stagger: 135 },
+  { xPct: 33, depth: 3 as const, kind: 0, stagger: 150 },
+  { xPct: 76, depth: 4 as const, kind: 1, stagger: 165 },
+  { xPct: 80, depth: 2 as const, kind: 2, stagger: 180 },
+  { xPct: 27, depth: 4 as const, kind: 3, stagger: 195 },
+  { xPct: 38, depth: 3 as const, kind: 4, stagger: 210 },
+  { xPct: 44, depth: 1 as const, kind: 1, stagger: 225 },
+  { xPct: 55, depth: 4 as const, kind: 0, stagger: 240 },
+  { xPct: 69, depth: 2 as const, kind: 3, stagger: 255 },
+  { xPct: 74, depth: 1 as const, kind: 4, stagger: 270 },
+  { xPct: 35, depth: 2 as const, kind: 2, stagger: 285 },
 ];
 
+// Depth perspective scale — applied via CSS only, never baked into SVG size
 const PIX_SCALE: Record<1|2|3|4, number> = { 1: 0.55, 2: 0.70, 3: 0.85, 4: 1.00 };
-
 const PIX_INDICES = Array.from({ length: PIX_SLOTS.length }, (_, i) => i);
 
 function shuffled(arr: number[]): number[] {
@@ -89,7 +160,11 @@ function shuffled(arr: number[]): number[] {
   return a;
 }
 
-// ── Single flower slot — same show/hide logic as TulipLayer ──────────────────
+// ── Single flower slot ────────────────────────────────────────────────────────
+// Two-layer pattern (mirrors TulipLayer):
+//   outer div — fixed SVG_W × SVG_H, handles show/hide transform + opacity
+//   inner div — applies depth perspective scale via CSS only
+//   SVG       — always full size, no scale param
 function PixelFlower({
   visible, xPct, stagger, kind, scale,
 }: {
@@ -99,22 +174,14 @@ function PixelFlower({
   const prevVisible     = useRef(false);
   const timerRef        = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const flowerW = Math.round(100 * scale);
-
   useEffect(() => {
     if (visible && !prevVisible.current) {
       if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
-      timerRef.current = setTimeout(() => {
-        setGen(g => g + 1);
-        timerRef.current = null;
-      }, stagger);
+      timerRef.current = setTimeout(() => { setGen(g => g + 1); timerRef.current = null; }, stagger);
     }
     if (!visible && prevVisible.current) {
       if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
-      timerRef.current = setTimeout(() => {
-        setGen(0);
-        timerRef.current = null;
-      }, 400);
+      timerRef.current = setTimeout(() => { setGen(0); timerRef.current = null; }, 400);
     }
     prevVisible.current = visible;
   }, [visible, stagger]);
@@ -122,30 +189,35 @@ function PixelFlower({
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
   return (
+    // Outer: position + show/hide
     <div style={{
       position:        'absolute',
       bottom:          0,
-      left:            `calc(${xPct}% - ${flowerW / 2}px)`,
+      left:            `calc(${xPct}% - ${SVG_W / 2}px)`,
+      width:           SVG_W,
+      height:          SVG_H,
       opacity:         visible ? 1 : 0,
-      transform:       visible ? 'scaleY(1)' : 'scaleY(0)',
+      transform:       visible ? 'scale(1)' : 'scale(0)',
       transformOrigin: 'bottom center',
       transition:      visible
         ? 'none'
-        : 'opacity 0.35s ease, transform 0.35s ease-in',
+        : 'opacity 0.4s ease, transform 0.4s cubic-bezier(0.4,0,0.8,0.2)',
       pointerEvents:   'none',
-      imageRendering:  'pixelated',
     }}>
-      {gen > 0 && (
-        <div
-          key={gen}
-          style={{
-            transformOrigin: 'bottom center',
-            animation:       'petal-bloom 0.18s ease-out both',
-          }}
-        >
-          <PixelFlowerSVG kind={kind} scale={scale} />
-        </div>
-      )}
+      {/* Inner: depth perspective scale */}
+      <div style={{
+        width:           SVG_W,
+        height:          SVG_H,
+        transformOrigin: 'bottom center',
+        transform:       `scale(${scale})`,
+        imageRendering:  'pixelated',
+      }}>
+        {gen > 0 && (
+          <div key={gen} style={{ transformOrigin: 'bottom center', animation: 'petal-bloom 0.18s ease-out both' }}>
+            <PixelFlowerSVG kind={kind} />
+          </div>
+        )}
+      </div>
     </div>
   );
 }
