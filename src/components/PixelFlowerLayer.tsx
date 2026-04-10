@@ -1,35 +1,22 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function hexToRgba(hex: string, alpha: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r},${g},${b},${alpha})`;
-}
+// ── Pixel flower definitions ───────────────────────────────────────────────────
+// Each flower is a tiny SVG (viewBox 0 0 5 10, display 20×40px).
+// shape-rendering="crispEdges" keeps everything sharp with no anti-aliasing.
+// 5 colour types: blue, red, white, yellow, purple.
 
-// ── Pixel flower colours ──────────────────────────────────────────────────────
 const PETAL_COLORS  = ['#4488FF', '#FF4444', '#EEEEEE', '#FFDD00', '#8844EE'];
 const CENTER_COLORS = ['#FFFFFF', '#FFDD00', '#FFDD00', '#FF8800', '#FFFFFF'];
 const DARK_OUTLINE  = ['#1144AA', '#AA1111', '#AAAAAA', '#AA7700', '#551188'];
 
-// ── PixelFlowerSVG ────────────────────────────────────────────────────────────
-// viewBox "0 0 5 10" — 5 units wide, 10 tall.
-// Display size: 200×400px at depth-4 scale (double of previous 100×200).
-// Each rect gets a staggered pix-pop animation so the flower builds
-// block-by-block from the stem up to the centre.
 function PixelFlowerSVG({ kind, scale }: { kind: number; scale: number }) {
   const petal   = PETAL_COLORS[kind]  ?? '#4488FF';
   const center  = CENTER_COLORS[kind] ?? '#FFFFFF';
   const outline = DARK_OUTLINE[kind]  ?? '#222222';
 
-  const w = Math.round(200 * scale);
-  const h = Math.round(400 * scale);
-
-  // Helper: inline style for each rect — snaps in at its delay (steps timing = instant)
-  const pop = (delay: number): React.CSSProperties => ({
-    animation: `pix-pop 0.04s steps(1, end) ${delay.toFixed(2)}s both`,
-  });
+  // Display size scaled by depth
+  const w = Math.round(20 * scale);
+  const h = Math.round(40 * scale);
 
   return (
     <svg
@@ -38,39 +25,34 @@ function PixelFlowerSVG({ kind, scale }: { kind: number; scale: number }) {
       shapeRendering="crispEdges"
       style={{ display: 'block', imageRendering: 'pixelated' }}
     >
-      {/* ── 1. Stem (appears first) ── */}
-      <rect x="2" y="3" width="1" height="7" fill="#228B22" style={pop(0.00)} />
+      {/* ── Stem ── */}
+      <rect x="2" y="3" width="1" height="7" fill="#228B22" />
+      {/* ── Leaves ── */}
+      <rect x="1" y="5" width="1" height="1" fill="#44AA33" />
+      <rect x="3" y="7" width="1" height="1" fill="#44AA33" />
 
-      {/* ── 2. Leaves (bottom leaf first) ── */}
-      <rect x="3" y="7" width="1" height="1" fill="#44AA33" style={pop(0.07)} />
-      <rect x="1" y="5" width="1" height="1" fill="#44AA33" style={pop(0.14)} />
+      {/* ── Petal outline (shadow) — 1px below / beside petals ── */}
+      <rect x="2" y="1" width="1" height="1" fill={outline} opacity="0.35" />
+      <rect x="0" y="2" width="1" height="1" fill={outline} opacity="0.35" />
+      <rect x="4" y="2" width="1" height="1" fill={outline} opacity="0.35" />
+      <rect x="2" y="3" width="1" height="1" fill={outline} opacity="0.25" />
 
-      {/* ── 3. Bottom petals ── */}
-      <rect x="1" y="3" width="1" height="1" fill={petal}                          style={pop(0.21)} />
-      <rect x="3" y="3" width="1" height="1" fill={petal}                          style={pop(0.28)} />
-      <rect x="2" y="3" width="1" height="1" fill={hexToRgba(outline, 0.25)}       style={pop(0.21)} />
+      {/* ── Petals (cross) ── */}
+      <rect x="2" y="0" width="1" height="1" fill={petal} />  {/* top    */}
+      <rect x="1" y="1" width="1" height="1" fill={petal} />  {/* top-L  */}
+      <rect x="3" y="1" width="1" height="1" fill={petal} />  {/* top-R  */}
+      <rect x="0" y="2" width="2" height="1" fill={petal} />  {/* left   */}
+      <rect x="3" y="2" width="2" height="1" fill={petal} />  {/* right  */}
+      <rect x="1" y="3" width="1" height="1" fill={petal} />  {/* btm-L  */}
+      <rect x="3" y="3" width="1" height="1" fill={petal} />  {/* btm-R  */}
 
-      {/* ── 4. Side petals ── */}
-      <rect x="0" y="2" width="2" height="1" fill={petal}                          style={pop(0.35)} />
-      <rect x="3" y="2" width="2" height="1" fill={petal}                          style={pop(0.42)} />
-      <rect x="0" y="2" width="1" height="1" fill={hexToRgba(outline, 0.35)}       style={pop(0.35)} />
-      <rect x="4" y="2" width="1" height="1" fill={hexToRgba(outline, 0.35)}       style={pop(0.42)} />
-
-      {/* ── 5. Upper-side petals ── */}
-      <rect x="1" y="1" width="1" height="1" fill={petal}                          style={pop(0.49)} />
-      <rect x="3" y="1" width="1" height="1" fill={petal}                          style={pop(0.56)} />
-      <rect x="2" y="1" width="1" height="1" fill={hexToRgba(outline, 0.35)}       style={pop(0.49)} />
-
-      {/* ── 6. Top petal ── */}
-      <rect x="2" y="0" width="1" height="1" fill={petal}                          style={pop(0.63)} />
-
-      {/* ── 7. Centre (last, on top of everything) ── */}
-      <rect x="2" y="1" width="1" height="2" fill={center}                         style={pop(0.70)} />
+      {/* ── Centre ── */}
+      <rect x="2" y="1" width="1" height="2" fill={center} />
     </svg>
   );
 }
 
-// ── Slot layout ───────────────────────────────────────────────────────────────
+// ── Slot layout — same positions as TulipLayer, 20 slots ─────────────────────
 const PIX_SLOTS = [
   { xPct: 15, depth: 2 as const, kind: 0, stagger:   0 },
   { xPct: 20, depth: 1 as const, kind: 1, stagger:  80 },
@@ -95,6 +77,7 @@ const PIX_SLOTS = [
 ];
 
 const PIX_SCALE: Record<1|2|3|4, number> = { 1: 0.55, 2: 0.70, 3: 0.85, 4: 1.00 };
+
 const PIX_INDICES = Array.from({ length: PIX_SLOTS.length }, (_, i) => i);
 
 function shuffled(arr: number[]): number[] {
@@ -106,7 +89,7 @@ function shuffled(arr: number[]): number[] {
   return a;
 }
 
-// ── Single flower slot ────────────────────────────────────────────────────────
+// ── Single flower slot — same show/hide logic as TulipLayer ──────────────────
 function PixelFlower({
   visible, xPct, stagger, kind, scale,
 }: {
@@ -116,16 +99,22 @@ function PixelFlower({
   const prevVisible     = useRef(false);
   const timerRef        = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const flowerW = Math.round(200 * scale);
+  const flowerW = Math.round(20 * scale);
 
   useEffect(() => {
     if (visible && !prevVisible.current) {
       if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
-      timerRef.current = setTimeout(() => { setGen(g => g + 1); timerRef.current = null; }, stagger);
+      timerRef.current = setTimeout(() => {
+        setGen(g => g + 1);
+        timerRef.current = null;
+      }, stagger);
     }
     if (!visible && prevVisible.current) {
       if (timerRef.current) { clearTimeout(timerRef.current); timerRef.current = null; }
-      timerRef.current = setTimeout(() => { setGen(0); timerRef.current = null; }, 400);
+      timerRef.current = setTimeout(() => {
+        setGen(0);
+        timerRef.current = null;
+      }, 400);
     }
     prevVisible.current = visible;
   }, [visible, stagger]);
@@ -140,11 +129,23 @@ function PixelFlower({
       opacity:         visible ? 1 : 0,
       transform:       visible ? 'scaleY(1)' : 'scaleY(0)',
       transformOrigin: 'bottom center',
-      transition:      visible ? 'none' : 'opacity 0.35s ease, transform 0.35s ease-in',
+      transition:      visible
+        ? 'none'
+        : 'opacity 0.35s ease, transform 0.35s ease-in',
       pointerEvents:   'none',
       imageRendering:  'pixelated',
     }}>
-      {gen > 0 && <PixelFlowerSVG key={gen} kind={kind} scale={scale} />}
+      {gen > 0 && (
+        <div
+          key={gen}
+          style={{
+            transformOrigin: 'bottom center',
+            animation:       'petal-bloom 0.18s ease-out both',
+          }}
+        >
+          <PixelFlowerSVG kind={kind} scale={scale} />
+        </div>
+      )}
     </div>
   );
 }
@@ -165,8 +166,14 @@ export function PixelFlowerLayer({ count }: { count: number }) {
     <>
       {depths.map(d => (
         <div key={d} style={{
-          position: 'absolute', bottom: '28%', left: 0, right: 0,
-          height: 0, overflow: 'visible', pointerEvents: 'none', zIndex: d,
+          position:      'absolute',
+          bottom:        '28%',
+          left:          0,
+          right:         0,
+          height:        0,
+          overflow:      'visible',
+          pointerEvents: 'none',
+          zIndex:        d,
         }}>
           {order.map((slotIdx, displayPos) => {
             const s = PIX_SLOTS[slotIdx];

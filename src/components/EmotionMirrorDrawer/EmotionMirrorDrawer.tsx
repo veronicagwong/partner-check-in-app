@@ -599,24 +599,15 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
                     {/* Pixel eyes */}
                     <div style={{ position:'absolute', left:'26%', top:'32%', width:'13%', height:'13%', background:'#111' }} />
                     <div style={{ position:'absolute', left:'58%', top:'32%', width:'13%', height:'13%', background:'#111' }} />
-                    {/* Pixel mouth — U-shape smile / flat / inverted-U frown */}
-                    {face.emotion === 'happy' && <>
-                      {/* smile U: corners RISE (smaller top%), middle DIPS (larger top%) */}
-                      <div style={{ position:'absolute', left:'24%', top:'57%', width:'11%', height:'10%', background:'#111' }} />
-                      <div style={{ position:'absolute', left:'35%', top:'64%', width:'11%', height:'10%', background:'#111' }} />
-                      <div style={{ position:'absolute', left:'54%', top:'64%', width:'11%', height:'10%', background:'#111' }} />
-                      <div style={{ position:'absolute', left:'65%', top:'57%', width:'11%', height:'10%', background:'#111' }} />
-                    </>}
-                    {face.emotion === 'sad' && <>
-                      {/* frown ∩: corners DIP (larger top%), middle RISES (smaller top%) */}
-                      <div style={{ position:'absolute', left:'24%', top:'64%', width:'11%', height:'10%', background:'#111' }} />
-                      <div style={{ position:'absolute', left:'35%', top:'57%', width:'11%', height:'10%', background:'#111' }} />
-                      <div style={{ position:'absolute', left:'54%', top:'57%', width:'11%', height:'10%', background:'#111' }} />
-                      <div style={{ position:'absolute', left:'65%', top:'64%', width:'11%', height:'10%', background:'#111' }} />
-                    </>}
+                    {/* Pixel mouth */}
+                    {face.emotion === 'happy' && (
+                      <div style={{ position:'absolute', left:'28%', top:'60%', width:'44%', height:'9%', background:'#111' }} />
+                    )}
+                    {face.emotion === 'sad' && (
+                      <div style={{ position:'absolute', left:'28%', top:'64%', width:'44%', height:'9%', background:'#111' }} />
+                    )}
                     {face.emotion === 'neutral' && (
-                      /* flat line */
-                      <div style={{ position:'absolute', left:'26%', top:'61%', width:'48%', height:'8%', background:'#111' }} />
+                      <div style={{ position:'absolute', left:'28%', top:'62%', width:'44%', height:'6%', background:'#111' }} />
                     )}
                   </div>
                 </div>
