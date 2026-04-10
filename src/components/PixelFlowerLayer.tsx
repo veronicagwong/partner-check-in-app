@@ -26,7 +26,7 @@ function PixelFlowerSVG({ kind, scale }: { kind: number; scale: number }) {
       style={{ display: 'block', imageRendering: 'pixelated' }}
     >
       {/* ── Stem ── */}
-      <rect x="2" y="3" width="1" height="7" fill="#228B22" />
+      <rect x="2.25" y="3" width="0.5" height="7" fill="#228B22" />
       {/* ── Leaves ── */}
       <rect x="1" y="5" width="1" height="1" fill="#44AA33" />
       <rect x="3" y="7" width="1" height="1" fill="#44AA33" />
