@@ -7,9 +7,11 @@ import type { WiltState } from './GrassLayer';
 //   short  = 1 block  =  8px  (40% chance)
 
 const BLADE_COUNT = 60;
+const BLADE_W = 2;    // px — thin like a stem
+const BLADE_GAP = 6;  // px — space between blades (stride = 8px total)
 const TALL = 32, MED = 16, SHORT = 8;
-const TIP   = '#5A8A2C';   // lighter green — matches flower leaves
-const BODY  = '#3D7020';   // darker green — matches flower stem
+const TIP   = '#5A8A2C';
+const BODY  = '#3D7020';
 
 function buildBlades(): Array<{ h: number }> {
   let seed = 0xdeadbeef;
@@ -20,25 +22,25 @@ function buildBlades(): Array<{ h: number }> {
   });
 }
 
-// SVG: 480 wide (60 × 8 units), 32 tall (max blade height)
-// Blades are bottom-aligned; tall blades get the lighter tip colour on top block.
+// SVG: 480 wide (60 blades × 8px stride), 32 tall (max blade)
+// Each blade is BLADE_W wide, bottom-aligned, tip block lighter green.
 function GrassBladesRow() {
   const [blades] = useState(buildBlades);
   return (
     <svg
       width="100%" height={TALL}
-      viewBox={`0 0 480 ${TALL}`}
+      viewBox={`0 0 ${BLADE_COUNT * (BLADE_W + BLADE_GAP)} ${TALL}`}
       preserveAspectRatio="none"
       shapeRendering="crispEdges"
       style={{ display: 'block', imageRendering: 'pixelated', position: 'absolute', top: -TALL, left: 0 }}
     >
       {blades.map((b, i) => {
-        const x = i * 8;
-        const y = TALL - b.h;   // bottom-align
+        const x = i * (BLADE_W + BLADE_GAP);
+        const y = TALL - b.h;
         return (
           <g key={i}>
-            <rect x={x} y={y}      width={8} height={8}      fill={TIP}  />   {/* tip block */}
-            {b.h > 8 && <rect x={x} y={y + 8} width={8} height={b.h - 8} fill={BODY} />}
+            <rect x={x} y={y}      width={BLADE_W} height={8}      fill={TIP}  />
+            {b.h > 8 && <rect x={x} y={y + 8} width={BLADE_W} height={b.h - 8} fill={BODY} />}
           </g>
         );
       })}
