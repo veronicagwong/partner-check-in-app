@@ -7,8 +7,8 @@ const LEAF = '#5A8A2C';
 
 // ── SVG base dimensions (depth scale applied via CSS, never baked in) ─────────
 // viewBox "0 0 9 14" → 10px per unit at 90×140px
-const SVG_W = 99;
-const SVG_H = 154;
+const SVG_W = 109;
+const SVG_H = 169;
 
 // ── Flower head pixel grids ───────────────────────────────────────────────────
 // Head occupies rows 0–6 (cols 0–8, center col 4).
