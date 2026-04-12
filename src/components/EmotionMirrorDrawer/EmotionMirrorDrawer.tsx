@@ -8,6 +8,8 @@ import { BirdLayer } from '../BirdLayer';
 import { PixelGrassLayer } from '../PixelGrassLayer';
 import { PixelFlowerLayer } from '../PixelFlowerLayer';
 import { PixelTransition } from '../PixelTransition';
+import { LineFlowerLayer } from '../LineFlowerLayer';
+import { LineGrassLayer } from '../LineGrassLayer';
 
 interface Props {
   isOpen: boolean;
@@ -40,7 +42,7 @@ interface Props {
 //  neutral  │ neither happy nor sad threshold met        │ —
 
 const GRAD = {
-  neutral:    '#ededeb',   // flat — no gradient for neutral, avoids gloomy grey ramp
+  neutral:    '#ededeb',
   happyOne:   'linear-gradient(to top, #f5d76e, #fffde7)',
   sadOne:     'linear-gradient(to top, #858585, #C4C4C4)',
   happyBoth:  'linear-gradient(to top, #f0b800, #FFD600)',
@@ -48,28 +50,38 @@ const GRAD = {
   mixed:      'linear-gradient(to top, #616161, #9E9E9E)',
 };
 
-function resolveBackground(faces: FaceEmotion[]): string {
+const GRAD_LINE = {
+  neutral:    '#ededeb',
+  happyOne:   'linear-gradient(to top, #A8C8E8, #E0F0FF)',  // light blue
+  sadOne:     'linear-gradient(to top, #9A9A9A, #D4D4D4)',  // grey
+  happyBoth:  'linear-gradient(to top, #A8C8E8, #E0F0FF)',  // light blue
+  sadBoth:    'linear-gradient(to top, #3A3A3A, #5E5E5E)',  // dark grey
+  mixed:      'linear-gradient(to top, #9A9A9A, #D4D4D4)',  // grey
+};
+
+function resolveBackground(faces: FaceEmotion[], theme: 'soft' | 'pixel' | 'line' = 'soft'): string {
+  const g = theme === 'line' ? GRAD_LINE : GRAD;
   const n = faces.length;
-  if (n === 0) return GRAD.neutral;
+  if (n === 0) return g.neutral;
   if (n === 1) {
-    if (faces[0].emotion === 'happy') return GRAD.happyOne;
-    if (faces[0].emotion === 'sad')   return GRAD.sadOne;
-    return GRAD.neutral;
+    if (faces[0].emotion === 'happy') return g.happyOne;
+    if (faces[0].emotion === 'sad')   return g.sadOne;
+    return g.neutral;
   }
   const emotions = [faces[0].emotion, faces[1].emotion].sort();
-  if (emotions[0] === 'happy' && emotions[1] === 'happy') return GRAD.happyBoth;
-  if (emotions[0] === 'sad'   && emotions[1] === 'sad')   return GRAD.sadBoth;
-  if (emotions.includes('happy') && emotions.includes('sad'))  return GRAD.mixed;
-  if (emotions.includes('sad'))   return GRAD.sadOne;
-  if (emotions.includes('happy')) return GRAD.happyOne;
-  return GRAD.neutral;
+  if (emotions[0] === 'happy' && emotions[1] === 'happy') return g.happyBoth;
+  if (emotions[0] === 'sad'   && emotions[1] === 'sad')   return g.sadBoth;
+  if (emotions.includes('happy') && emotions.includes('sad'))  return g.mixed;
+  if (emotions.includes('sad'))   return g.sadOne;
+  if (emotions.includes('happy')) return g.happyOne;
+  return g.neutral;
 }
 
 function resolveIsDark(faces: FaceEmotion[]): boolean {
+  // Only sadBoth (dark grey) needs white UI — everything else is light enough
   if (faces.length < 2) return false;
   const emotions = faces.map(f => f.emotion).sort();
-  return (emotions[0] === 'sad' && emotions[1] === 'sad') ||
-         (emotions.includes('happy') && emotions.includes('sad'));
+  return emotions[0] === 'sad' && emotions[1] === 'sad';
 }
 
 // Grain overlay data URI — SVG feTurbulence fractal noise
@@ -152,6 +164,15 @@ function getBlobStyle(emotion: FaceEmotion['emotion']): {
 // Loading state uses neutral glass
 const loadingGlass: React.CSSProperties = getBlobStyle('neutral').glass;
 
+// ── Line blob style — transparent with blue stroke only ──────────────────────
+const LINE_BLOB_STYLE: React.CSSProperties = {
+  background:           'transparent',
+  border:               '2px solid #3A44DC',
+  boxShadow:            'none',
+  backdropFilter:       'none',
+  WebkitBackdropFilter: 'none',
+};
+
 // ── Pixel blob style ──────────────────────────────────────────────────────────
 const PIXEL_BLOB_BG: Record<FaceEmotion['emotion'], string> = {
   happy:   '#F5C800',
@@ -208,7 +229,7 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   // ── Theme ─────────────────────────────────────────────────────────────────
-  type Theme = 'soft' | 'pixel';
+  type Theme = 'soft' | 'pixel' | 'line';
   const [theme, setTheme]                     = useState<Theme>('soft');
   const [transitionTrigger, setTransitionTrigger] = useState(0);
   const themeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -367,9 +388,9 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
     };
   }, []);
 
-  // ── Crossfade gradient when emotion state changes ─────────────────────────
+  // ── Crossfade gradient when emotion state or theme changes ───────────────
   useEffect(() => {
-    const newGrad = resolveBackground(faces);
+    const newGrad = resolveBackground(faces, theme);
     if (newGrad === prevGradRef.current) return;
     prevGradRef.current = newGrad;
     if (aIsTopRef.current) {
@@ -381,7 +402,7 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
       setAIsTop(true);
       aIsTopRef.current = true;
     }
-  }, [faces]);
+  }, [faces, theme]);
 
   if (!mounted) return null;
 
@@ -621,6 +642,16 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
                 </div>
               );
             }
+            if (theme === 'line') {
+              return (
+                <div key={i} style={{ position: 'relative', width: circleSize, height: circleSize }}>
+                  <div
+                    className={i === 0 ? 'blob-a' : 'blob-b'}
+                    style={{ position: 'absolute', inset: 0, ...LINE_BLOB_STYLE }}
+                  />
+                </div>
+              );
+            }
             const { glass, bloom } = getBlobStyle(face.emotion);
             return (
               <div key={i} style={{ position: 'relative', width: circleSize, height: circleSize }}>
@@ -638,14 +669,18 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
       </div>
 
       {/* ── Grass ── */}
-      {theme === 'soft'
-        ? <GrassLayer wiltState={wiltState} />
-        : <PixelGrassLayer wiltState={wiltState} />}
+      {theme === 'pixel'
+        ? <PixelGrassLayer wiltState={wiltState} />
+        : theme === 'line'
+          ? <LineGrassLayer wiltState={wiltState} />
+          : <GrassLayer wiltState={wiltState} />}
 
       {/* ── Flowers ── */}
       {theme === 'soft'
         ? <TulipLayer count={tulipCount} />
-        : <PixelFlowerLayer count={tulipCount} />}
+        : theme === 'pixel'
+          ? <PixelFlowerLayer count={tulipCount} />
+          : <LineFlowerLayer count={tulipCount} />}
 
       {/* ── Bird — flutters across when both faces are happy ── */}
       <BirdLayer active={
@@ -667,13 +702,12 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
         gap:       8,
         zIndex:    10,
       }}>
-        {(['soft', 'pixel', '—'] as const).map(t => {
+        {(['soft', 'pixel', 'line'] as const).map(t => {
           const isActive = t === theme;
-          const isPlaceholder = t === '—';
           return (
             <button
               key={t}
-              onClick={!isPlaceholder ? () => changeTheme(t as Theme) : undefined}
+              onClick={() => changeTheme(t)}
               style={{
                 fontFamily:  '"Space Mono", monospace',
                 fontSize:    10,
@@ -689,13 +723,13 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
                 color: isDark
                   ? (isActive ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.40)')
                   : (isActive ? 'rgba(0,0,0,0.65)'       : 'rgba(0,0,0,0.35)'),
-                cursor:     isPlaceholder ? 'default' : 'pointer',
+                cursor:     'pointer',
                 fontWeight: isActive ? 700 : 400,
                 transition: 'border-color 0.25s, color 0.25s, font-weight 0.25s',
                 userSelect: 'none',
               }}
             >
-              {t === 'soft' ? 'Soft' : t === 'pixel' ? 'Pixel' : '—'}
+              {t === 'soft' ? 'Soft' : t === 'pixel' ? 'Pixel' : 'Line'}
             </button>
           );
         })}
