@@ -1,12 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 
-// ── Minimal side-view bird SVG ────────────────────────────────────────────────
-// Facing right by default; flip horizontally for RTL passes.
+// ── Minimal side-view bird SVG — filled (Soft / Pixel themes) ─────────────────
 function BirdSVG({ flipped }: { flipped: boolean }) {
   return (
-    // Outer wrapper handles horizontal flip (static transform)
     <div style={{ display: 'inline-block', transform: flipped ? 'scaleX(-1)' : undefined }}>
-      {/* Inner wrapper carries the bobbing animation (translateY) */}
       <div style={{ display: 'inline-block', animation: 'bird-bob 1.5s ease-in-out infinite' }}>
         <svg width="44" height="29" viewBox="0 0 40 26" fill="none">
           {/* tail */}
@@ -35,6 +32,38 @@ function BirdSVG({ flipped }: { flipped: boolean }) {
   );
 }
 
+// ── Line-art bird SVG — stroke only, blue, same proportions ───────────────────
+const LS = '#3A44DC';  // line stroke colour
+const SW = 1.8;        // stroke width
+
+function LineBirdSVG({ flipped }: { flipped: boolean }) {
+  return (
+    <div style={{ display: 'inline-block', transform: flipped ? 'scaleX(-1)' : undefined }}>
+      <div style={{ display: 'inline-block', animation: 'bird-bob 1.5s ease-in-out infinite' }}>
+        <svg width="52" height="34" viewBox="0 0 50 32" fill="none" overflow="visible">
+          {/* tail — two forked strokes */}
+          <path d="M9 16 L1 10" stroke={LS} strokeWidth={SW} strokeLinecap="round" />
+          <path d="M9 16 L1 20" stroke={LS} strokeWidth={SW} strokeLinecap="round" />
+          {/* body */}
+          <ellipse cx="20" cy="18" rx="11" ry="6.5" stroke={LS} strokeWidth={SW} />
+          {/* wing — flaps around its root */}
+          <path
+            d="M21 13 C25 6 32 4 36 6 C31 9 25 11 21 13Z"
+            stroke={LS} strokeWidth={SW} strokeLinejoin="round"
+            style={{ transformOrigin: '21px 13px', animation: 'wing-flap 0.30s ease-in-out infinite' }}
+          />
+          {/* head */}
+          <circle cx="30" cy="12" r="5.5" stroke={LS} strokeWidth={SW} />
+          {/* eye — small filled dot */}
+          <circle cx="31.8" cy="10.2" r="1.0" fill={LS} />
+          {/* beak — open triangle pointing right */}
+          <path d="M35 11 L43 9.5 L35 13.5" stroke={LS} strokeWidth={1.4} strokeLinejoin="round" strokeLinecap="round" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
 // ── BirdLayer ─────────────────────────────────────────────────────────────────
 // Renders a bird that flutters across the screen whenever `active` is true.
 // Each pass picks a random direction (LTR / RTL) and vertical position.
@@ -46,7 +75,7 @@ interface Pass {
   topPct: number;
 }
 
-export function BirdLayer({ active }: { active: boolean }) {
+export function BirdLayer({ active, theme = 'soft' }: { active: boolean; theme?: 'soft' | 'pixel' | 'line' }) {
   const [pass, setPass]   = useState<Pass | null>(null);
   const idRef             = useRef(0);
   const intervalRef       = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -101,7 +130,9 @@ export function BirdLayer({ active }: { active: boolean }) {
           : 'bird-fly-rtl 4.5s ease-in-out forwards',
       }}
     >
-      <BirdSVG flipped={pass.direction === 'rtl'} />
+      {theme === 'line'
+        ? <LineBirdSVG flipped={pass.direction === 'rtl'} />
+        : <BirdSVG     flipped={pass.direction === 'rtl'} />}
     </div>
   );
 }

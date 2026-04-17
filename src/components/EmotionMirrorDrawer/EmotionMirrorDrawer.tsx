@@ -52,9 +52,9 @@ const GRAD = {
 
 const GRAD_LINE = {
   neutral:    '#ededeb',
-  happyOne:   'linear-gradient(to top, #A8C8E8, #E0F0FF)',  // light blue
+  happyOne:   'linear-gradient(to top, #C8E3F8, #EEF7FF)',  // very light blue
   sadOne:     'linear-gradient(to top, #9A9A9A, #D4D4D4)',  // grey
-  happyBoth:  'linear-gradient(to top, #A8C8E8, #E0F0FF)',  // light blue
+  happyBoth:  'linear-gradient(to top, #C8E3F8, #EEF7FF)',  // very light blue
   sadBoth:    'linear-gradient(to top, #3A3A3A, #5E5E5E)',  // dark grey
   mixed:      'linear-gradient(to top, #9A9A9A, #D4D4D4)',  // grey
 };
@@ -683,11 +683,14 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
           : <LineFlowerLayer count={tulipCount} />}
 
       {/* ── Bird — flutters across when both faces are happy ── */}
-      <BirdLayer active={
-        faces.length === 2 &&
-        faces[0].emotion === 'happy' &&
-        faces[1].emotion === 'happy'
-      } />
+      <BirdLayer
+        theme={theme}
+        active={
+          faces.length === 2 &&
+          faces[0].emotion === 'happy' &&
+          faces[1].emotion === 'happy'
+        }
+      />
 
       {/* ── Pixel transition overlay ── */}
       <PixelTransition trigger={transitionTrigger} />
