@@ -9,10 +9,8 @@ function PixelWipeOverlay() {
       inset:           0,
       zIndex:          998,
       pointerEvents:   'none',
-      imageRendering:  'pixelated',
-      // Colourful 16×16px pixel grid — coral / blue / yellow / purple
-      background:      'repeating-conic-gradient(#FF4444 0% 25%, #4488FF 25% 50%, #FFDD00 50% 75%, #8844EE 75%) 0 0 / 16px 16px',
-      animation:       'pixel-wipe 0.42s ease-in-out forwards',
+      background:      'rgba(255,255,255,0.85)',
+      animation:       'pixel-wipe 0.38s ease-in-out forwards',
     }} />
   );
 }

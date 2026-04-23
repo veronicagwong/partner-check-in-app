@@ -457,31 +457,6 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
         pointerEvents: 'none',
       }} />
 
-      {/* ── Close button ── */}
-      <button
-        aria-label="Close Emotion Mirror"
-        onClick={handleClose}
-        style={{
-          position: 'absolute',
-          top: 20,
-          left: 20,
-          background: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.12)',
-          border: 'none',
-          borderRadius: 999,
-          width: 36,
-          height: 36,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: 'pointer',
-          color: isDark ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.5)',
-          fontSize: 16,
-          zIndex: 2,
-          transition: 'background 0.3s',
-        }}
-      >
-        ✕
-      </button>
 
       {/* ── Camera PiP — top right ── */}
       <div
@@ -698,7 +673,7 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
       {/* ── Theme switcher ── */}
       <div style={{
         position:  'absolute',
-        bottom:    14,
+        top:       'calc(72% + 30px)',
         left:      '50%',
         transform: 'translateX(-50%)',
         display:   'flex',
@@ -713,9 +688,10 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
               onClick={() => changeTheme(t)}
               style={{
                 fontFamily:  '"Space Mono", monospace',
-                fontSize:    10,
-                letterSpacing: '0.06em',
-                padding:     '4px 11px',
+                fontSize:    12,
+                letterSpacing: '0.08em',
+                padding:     '0 22px',
+                height:      55,
                 background:  'transparent',
                 border:      `${isActive ? 1.8 : 1.2}px solid ${
                   isDark
@@ -736,25 +712,6 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
             </button>
           );
         })}
-      </div>
-
-      {/* ── Temp debug badge — remove once wilt is confirmed working ── */}
-      <div style={{
-        position: 'absolute', top: 12, left: 12, zIndex: 999,
-        background: 'rgba(0,0,0,0.75)', color: '#fff',
-        fontFamily: 'monospace', fontSize: 13, padding: '8px 12px',
-        borderRadius: 8, lineHeight: 1.8, pointerEvents: 'none',
-      }}>
-        {faces.map((f, i) => (
-          <div key={i}>
-            face {i}: <b style={{ color: f.emotion === 'sad' ? '#7dd' : f.emotion === 'happy' ? '#fd7' : '#aaa' }}>{f.emotion}</b>
-            {f.debug && <span style={{ opacity: 0.7 }}> | frown {f.debug.frown.toFixed(2)} puck {f.debug.pucker.toFixed(2)} score {f.debug.frownScore.toFixed(2)}</span>}
-          </div>
-        ))}
-        <div style={{ marginTop: 4, borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: 4 }}>
-          wilt: <b style={{ color: wiltState === 'wilted' ? '#f77' : wiltState === 'recovering' ? '#7f7' : '#aaa' }}>{wiltState}</b>
-          {' | '}timer: <b>{sadTimerRef.current ? 'running' : 'off'}</b>
-        </div>
       </div>
 
       {/* ── Camera switcher — bottom right ── */}
@@ -786,33 +743,6 @@ export function EmotionMirrorDrawer({ isOpen, onClose }: Props) {
           📷
         </button>
       )}
-
-      {/* ── Debug overlay — remove once thresholds are tuned ── */}
-      {faces.some(f => f.debug) && (
-        <div style={{
-          position: 'absolute',
-          top: 64,
-          left: 12,
-          fontFamily: 'monospace',
-          fontSize: 11,
-          color: isDark ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.55)',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 4,
-          pointerEvents: 'none',
-          zIndex: 3,
-        }}>
-          {faces.map((f, i) => f.debug && (
-            <div key={i} style={{ lineHeight: 1.7 }}>
-              <b>face {i}</b> → <b>{f.emotion}</b><br />
-              😊 smile {f.debug.smile.toFixed(2)} <span style={{ opacity: 0.5 }}>(need &gt;0.28)</span><br />
-              😢 frown {f.debug.frown.toFixed(2)} · pucker {f.debug.pucker.toFixed(2)} · score {f.debug.frownScore.toFixed(2)} <span style={{ opacity: 0.5 }}>(need &gt;0.25)</span><br />
-              😐 neutral = neither threshold met
-            </div>
-          ))}
-        </div>
-      )}
-
 
       {/* ── Privacy note — bottom center ── */}
       <p
