@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // ── Minimal side-view bird SVG — filled (Soft / Pixel themes) ─────────────────
 function BirdSVG({ flipped }: { flipped: boolean }) {

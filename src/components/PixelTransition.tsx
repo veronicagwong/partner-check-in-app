@@ -1,4 +1,4 @@
-import React from 'react';
+
 
 // Re-mounts on every trigger change (key={trigger}), restarting the animation.
 // The parent should swap the theme at ~200ms (midpoint when overlay is opaque).

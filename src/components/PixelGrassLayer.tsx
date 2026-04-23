@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import type { WiltState } from './GrassLayer';
 
 // ── 3 blade heights (in 8px blocks) ──────────────────────────────────────────

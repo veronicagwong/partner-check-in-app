@@ -1,4 +1,5 @@
-import { useRef, useState, useEffect, useCallback, RefObject } from 'react';
+import { useRef, useState, useEffect, useCallback } from 'react';
+import type { RefObject } from 'react';
 import type { EmotionLabel, FaceEmotion, CameraPermission } from '../types/emotion';
 
 // MediaPipe is loaded lazily — cached here after first load

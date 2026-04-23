@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 // kind: 0=blue daisy  1=red tulip  2=white daisy  3=yellow sunflower  4=purple hyacinth

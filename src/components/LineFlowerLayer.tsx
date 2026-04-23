@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 // ── Shared slot layout (identical to TulipLayer) ──────────────────────────────
 const SLOTS = [
